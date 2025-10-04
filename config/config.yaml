@@ -66,6 +66,7 @@ data:
 # Google Cloud Platform
 gcp:
   region: "us-central1"
+  project_id: "crypto-ml-trading-487"
   
   # BigQuery
   bigquery:
@@ -78,8 +79,8 @@ gcp:
   
   # Cloud Storage
   storage:
-    models_bucket: "crypto-ml-models"
-    backups_bucket: "crypto-ml-backups"
+    models_bucket: "crypto-ml-models-487"
+    backups_bucket: "crypto-ml-backups-487"
   
   # Vertex AI
   vertex_ai:
