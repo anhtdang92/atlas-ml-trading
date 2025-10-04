@@ -7,22 +7,33 @@ A machine learning-powered cryptocurrency trading application that uses LSTM neu
 ![GCP](https://img.shields.io/badge/Google%20Cloud-Platform-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-## 🎉 Current Status: Phase 1 Complete!
+## 🎉 Current Status: Phase 1 Complete + Portfolio Integration!
 
 **Last Updated:** October 4, 2025
 
 ### ✅ What's Working Now:
-- **Streamlit Dashboard** - Fully functional web application
+- **Streamlit Dashboard** - Fully functional web application with professional UI
 - **Live Price Tracking** - Real-time data from Kraken API (6+ cryptocurrencies)
 - **Interactive Charts** - Candlestick charts with multiple time intervals
-- **Portfolio View** - Mock portfolio with live price updates
-- **API Integration** - Kraken API client with retry logic and rate limiting
+- **Real Portfolio Integration** - Connected to actual Kraken account via API
+- **Authenticated API** - Secure connection to view account balances and holdings
+- **Staking Support** - Separate tracking for staked/bonded assets
+- **Advanced KPIs** - Easy-to-read cards showing liquid value, staked value, P&L, and total assets
+- **Refresh Functionality** - One-click data refresh from Kraken
+- **API Client** - Kraken API client with retry logic and rate limiting
 - **HTML Dashboard** - Alternative standalone HTML interface
+
+### 🆕 New Features:
+- **🔐 Authenticated Portfolio** - View your real Kraken holdings
+- **🔒 Staking Dashboard** - Track bonded/staked assets earning rewards
+- **💰 Liquid vs Staked** - Clear separation of tradeable vs locked assets
+- **🎨 Improved UI** - Large, colorful KPI cards with better readability
+- **🔄 Live Refresh** - Manual refresh button to update data on demand
 
 ### 🚧 In Progress:
 - Phase 2: ML Model Development (LSTM for price predictions)
 
-### 📍 Current Phase: Phase 1 - Data Pipeline ✅ COMPLETE
+### 📍 Current Phase: Phase 1 ✅ COMPLETE | Portfolio Integration ✅ COMPLETE
 
 ## 🎯 Project Overview
 
@@ -179,22 +190,33 @@ export KRAKEN_API_SECRET="your_secret"
 python kraken_test.py --with-auth
 ```
 
-### Optional: Adding API Keys (For Live Trading Later)
+### Adding API Keys (View Your Real Portfolio!)
 
 1. **Get API keys from Kraken:**
    - Go to Kraken → Settings → API
-   - Create key with: "Query Funds" + "Create & Modify Orders"
+   - Create key named "ML Dashboard Read Only"
+   - Select permissions:
+     - ✅ Query (Funds)
+     - ✅ Query open orders & trades
+     - ✅ Query closed orders & trades
+     - ✅ Query ledger entries (optional)
+   - ⚠️ **DO NOT** enable: Deposit, Withdraw, Create & Modify Orders (for now)
 
 2. **Configure secrets:**
    ```bash
    cp config/secrets.yaml.example config/secrets.yaml
-   # Edit secrets.yaml with your keys
+   # Edit secrets.yaml and paste your API key and Private key
    ```
 
 3. **Test authentication:**
    ```bash
-   python kraken_test.py --with-auth
+   python test_auth.py
    ```
+
+4. **View your portfolio:**
+   - Restart the dashboard: `streamlit run app.py`
+   - You'll see your real holdings, including staked assets!
+   - Click "🔄 Refresh Data" to update from Kraken
 
 ### Optional: Configure GCP (Phase 7 - Cloud Deployment)
 
@@ -260,10 +282,15 @@ Upload `quantconnect/backtest_strategy.py` to QuantConnect and configure:
 - [x] Kraken API client with retry logic
 - [x] Rate limiting and error handling
 - [x] Public endpoint integration (no API keys required)
+- [x] Private endpoint authentication (API keys)
 - [x] Streamlit dashboard foundation
 - [x] Live price tracking for 6+ cryptocurrencies
 - [x] Interactive candlestick charts
 - [x] Portfolio view with real-time updates
+- [x] Real Kraken account integration
+- [x] Staking/bonded assets tracking
+- [x] Professional UI with large KPI cards
+- [x] Manual refresh functionality
 - [x] HTML alternative dashboard
 - [ ] BigQuery schema and storage (Phase 7)
 - [ ] Automated daily data updates (Phase 7)

@@ -1,8 +1,8 @@
 # Project Context: Crypto ML Trading Dashboard
 
 **Last Updated**: October 4, 2025  
-**Project Status**: Initialization Phase  
-**Current Phase**: Phase 1 - Planning & Setup
+**Project Status**: Phase 1 Complete + Portfolio Integration Complete  
+**Current Phase**: Ready for Phase 2 - ML Model Development
 
 ---
 
@@ -383,9 +383,19 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 ## 🐛 Known Issues & TODOs
 
 ### Current Issues
-- [ ] None yet (project just initialized)
+- [ ] None critical - Phase 1 working smoothly!
+
+### Completed Recently
+- [x] Kraken API authentication
+- [x] Real portfolio integration
+- [x] Staking/bonded assets tracking
+- [x] Improved KPI visualization
+- [x] Manual refresh functionality
+- [x] Separated liquid vs staked holdings
 
 ### Future Enhancements
+- [ ] Historical staking rewards tracking
+- [ ] Staking APY calculations
 - [ ] Add more technical indicators (MACD, Bollinger Bands)
 - [ ] Implement sentiment analysis from Twitter/Reddit
 - [ ] Multi-model ensemble (LSTM + XGBoost)
@@ -393,6 +403,7 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 - [ ] Mobile-responsive dashboard improvements
 - [ ] Stop-loss and take-profit automation
 - [ ] Tax reporting CSV export
+- [ ] Alert system for price movements
 
 ---
 
@@ -466,7 +477,29 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ## 🎓 Lessons Learned
 
-*This section will be updated as the project progresses...*
+### Phase 1 & Portfolio Integration:
+
+**Technical Learnings:**
+1. **Kraken API Authentication**: HMAC-SHA512 signature generation is tricky but well documented
+2. **Staking Assets**: Kraken uses suffixes (.B, .F, .S) to indicate bonded/futures positions
+3. **Streamlit Caching**: `@st.cache_data` is crucial for performance with API calls
+4. **Asset Mapping**: Need to handle Kraken's naming (XXBT vs XBT vs BT.B all = BTC)
+
+**UI/UX Learnings:**
+1. **Large KPIs Work Better**: Users prefer big, colorful cards over small metrics
+2. **Separation is Clarity**: Showing liquid vs staked separately reduces confusion
+3. **Manual Refresh**: Users want control over when data updates (vs auto-refresh)
+4. **Progressive Disclosure**: Expandable sections for details (like "What is Staking?") work well
+
+**Security Learnings:**
+1. **Never Commit Secrets**: .gitignore is critical - always check before commits
+2. **Read-Only First**: Start with query-only API permissions, add trading later
+3. **API Key Rotation**: Plan to rotate keys every 90 days for security
+
+**Development Learnings:**
+1. **Test with Real Data Early**: Mock data hides real-world edge cases
+2. **Debug Views Help**: Adding expandable debug sections helped troubleshooting
+3. **Incremental Features**: Building in small steps made debugging easier
 
 ---
 

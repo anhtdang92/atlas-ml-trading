@@ -104,6 +104,16 @@ except ImportError:
                 return None
 
 
+def _get_demo_portfolio():
+    """Return demo portfolio data."""
+    return {
+        'BTC': {'quantity': 0.041, 'avg_buy_price': 118500, 'current_price': 122001},
+        'ETH': {'quantity': 0.55, 'avg_buy_price': 4300, 'current_price': 4479},
+        'SOL': {'quantity': 5.5, 'avg_buy_price': 220, 'current_price': 227},
+        'ADA': {'quantity': 3000, 'avg_buy_price': 0.42, 'current_price': 0.45}
+    }
+
+
 def show_header():
     """Display the main header."""
     col1, col2, col3 = st.columns([2, 3, 2])
@@ -118,28 +128,130 @@ def show_header():
 
 def show_portfolio_view():
     """Display portfolio overview with holdings and performance."""
-    st.header("💼 Portfolio Overview")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.header("💼 Portfolio Overview")
+    with col2:
+        if st.button("🔄 Refresh Data", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
     
-    # Mock portfolio data (will be replaced with real data when API keys are added)
-    portfolio_data = {
-        'BTC': {'quantity': 0.041, 'avg_buy_price': 118500, 'current_price': 122001},
-        'ETH': {'quantity': 0.55, 'avg_buy_price': 4300, 'current_price': 4479},
-        'SOL': {'quantity': 5.5, 'avg_buy_price': 220, 'current_price': 227},
-        'ADA': {'quantity': 3000, 'avg_buy_price': 0.42, 'current_price': 0.45}
-    }
+    # Try to load real portfolio from Kraken
+    try:
+        from data.kraken_auth import KrakenAuthClient
+        
+        with st.spinner("🔄 Fetching your portfolio from Kraken..."):
+            client = KrakenAuthClient()
+            balance = client.get_account_balance()
+            
+            if balance:
+                # Separate liquid and staked assets
+                portfolio_data = {}
+                staked_data = {}
+                usd_balance = 0.0
+                
+                # Map Kraken asset names to friendly names
+                asset_map = {
+                    'XXBT': 'BTC', 'XBT': 'BTC',
+                    'XETH': 'ETH', 'ETH': 'ETH',
+                    'SOL': 'SOL',
+                    'ADA': 'ADA',
+                    'DOT': 'DOT',
+                    'AAVE': 'AAVE',
+                    'BABY': 'BABY',
+                    'ZUSD': 'USD', 'USD': 'USD'
+                }
+                
+                # Identify staked/bonded assets
+                staked_suffixes = {
+                    '.B': 'Bonded (Staked)',
+                    '.F': 'Futures',
+                    '.S': 'Staked',
+                    '.M': 'Staked (Medium)',
+                    '.L': 'Locked Staking'
+                }
+                
+                # Process real balances
+                for asset, amount in balance.items():
+                    qty = float(amount)
+                    if qty > 0:
+                        # Check if it's USD
+                        if asset in ['ZUSD', 'USD']:
+                            usd_balance += qty
+                            continue
+                        
+                        # Check if it's staked/bonded
+                        is_staked = False
+                        stake_type = 'Staked'
+                        clean_asset = asset
+                        
+                        for suffix, description in staked_suffixes.items():
+                            if asset.endswith(suffix):
+                                is_staked = True
+                                stake_type = description
+                                # Remove suffix and map to friendly name
+                                base_asset = asset[:-2]  # Remove .B, .F, etc.
+                                clean_asset = asset_map.get(base_asset, base_asset)
+                                break
+                        
+                        if not is_staked:
+                            clean_asset = asset_map.get(asset, asset)
+                        
+                        # Add to appropriate dictionary
+                        target_dict = staked_data if is_staked else portfolio_data
+                        
+                        if clean_asset not in target_dict:
+                            target_dict[clean_asset] = {
+                                'quantity': qty,
+                                'avg_buy_price': 0,
+                                'current_price': 0,
+                                'stake_type': stake_type if is_staked else None,
+                                'raw_asset': asset
+                            }
+                        else:
+                            target_dict[clean_asset]['quantity'] += qty
+                
+                st.success("✅ Connected to your Kraken account!")
+            else:
+                st.warning("⚠️ Could not fetch portfolio. Using demo data.")
+                portfolio_data = _get_demo_portfolio()
+                
+    except Exception as e:
+        st.warning(f"⚠️ Could not connect to Kraken: {e}. Using demo data.")
+        portfolio_data = _get_demo_portfolio()
     
-    # Fetch live prices
-    kraken_pairs = ['XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'ADAUSD']
-    ticker_data = KrakenAPI.get_ticker(kraken_pairs)
+    # If no holdings, show demo
+    if not portfolio_data:
+        st.info("📝 No holdings found. Add some crypto to your Kraken account or using demo data.")
+        portfolio_data = _get_demo_portfolio()
     
-    if ticker_data:
-        # Update current prices from live data
-        pair_map = {'XXBTZUSD': 'BTC', 'XETHZUSD': 'ETH', 'SOLUSD': 'SOL', 'ADAUSD': 'ADA'}
-        for kraken_pair, symbol in pair_map.items():
-            # Find the matching key in ticker_data
-            matching_key = [k for k in ticker_data.keys() if kraken_pair in k or k in kraken_pair]
-            if matching_key:
-                portfolio_data[symbol]['current_price'] = float(ticker_data[matching_key[0]]['c'][0])
+    # Fetch live prices for all holdings
+    if portfolio_data:
+        # Map symbols to Kraken pair names
+        symbol_to_pair = {
+            'BTC': 'XXBTZUSD',
+            'ETH': 'XETHZUSD',
+            'SOL': 'SOLUSD',
+            'ADA': 'ADAUSD',
+            'DOT': 'DOTUSD',
+            'AAVE': 'AAVEUSD',
+            'BABY': 'BABYUSD'  # May not have USD pair
+        }
+        
+        # Get pairs for symbols we have
+        pairs_to_fetch = [symbol_to_pair.get(symbol) for symbol in portfolio_data.keys() if symbol_to_pair.get(symbol)]
+        
+        if pairs_to_fetch:
+            kraken_api = KrakenAPI()
+            ticker_data = kraken_api.get_ticker(pairs_to_fetch)
+            
+            if ticker_data:
+                # Update current prices from live data
+                for symbol, pair in symbol_to_pair.items():
+                    if symbol in portfolio_data and pair:
+                        matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
+                        if matching_key:
+                            portfolio_data[symbol]['current_price'] = float(ticker_data[matching_key[0]]['c'][0])
     
     # Calculate portfolio metrics
     total_value = 0
@@ -173,46 +285,208 @@ def show_portfolio_view():
     total_pnl = total_value - total_cost
     total_pnl_pct = (total_pnl / total_cost) * 100 if total_cost > 0 else 0
     
-    # Display key metrics
+    # Show last update time
+    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
+    
+    # Calculate staked value if available
+    staked_value = 0
+    if 'staked_data' in locals() and staked_data:
+        # Fetch prices for staked assets too
+        staked_pairs = []
+        staked_symbol_to_pair = {
+            'BTC': 'XXBTZUSD',
+            'ETH': 'XETHZUSD',
+            'SOL': 'SOLUSD',
+            'DOT': 'DOTUSD'
+        }
+        
+        for symbol in staked_data.keys():
+            if symbol in staked_symbol_to_pair:
+                staked_pairs.append(staked_symbol_to_pair[symbol])
+        
+        if staked_pairs:
+            kraken_api = KrakenAPI()
+            staked_ticker = kraken_api.get_ticker(staked_pairs)
+            
+            if staked_ticker:
+                for symbol, pair in staked_symbol_to_pair.items():
+                    if symbol in staked_data and pair:
+                        matching_key = [k for k in staked_ticker.keys() if pair in k or k in pair]
+                        if matching_key:
+                            price = float(staked_ticker[matching_key[0]]['c'][0])
+                            staked_data[symbol]['current_price'] = price
+                            staked_value += staked_data[symbol]['quantity'] * price
+    else:
+        staked_data = {}
+    
+    # Display key metrics with better styling
+    st.markdown("### 📊 Portfolio Summary")
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Portfolio Value", f"${total_value:,.2f}")
+        st.markdown(f"""
+        <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid #1f77b4;'>
+            <h4 style='color: #1f77b4; margin: 0;'>💰 Total Value</h4>
+            <h1 style='color: white; margin: 10px 0;'>${total_value:,.4f}</h1>
+            <p style='color: #888; margin: 0; font-size: 14px;'>Current portfolio value</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.metric("Total Cost Basis", f"${total_cost:,.2f}")
+        pnl_color = "#00ff00" if total_pnl >= 0 else "#ff4444"
+        pnl_symbol = "📈" if total_pnl >= 0 else "📉"
+        st.markdown(f"""
+        <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid {pnl_color};'>
+            <h4 style='color: {pnl_color}; margin: 0;'>{pnl_symbol} Total P&L</h4>
+            <h1 style='color: {pnl_color}; margin: 10px 0;'>${total_pnl:+,.4f}</h1>
+            <p style='color: #888; margin: 0; font-size: 14px;'>{total_pnl_pct:+.2f}% gain/loss</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.metric("Total P&L", f"${total_pnl:,.2f}", f"{total_pnl_pct:+.2f}%")
+        st.markdown(f"""
+        <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid #9467bd;'>
+            <h4 style='color: #9467bd; margin: 0;'>🔒 Staked Value</h4>
+            <h1 style='color: white; margin: 10px 0;'>${staked_value:,.4f}</h1>
+            <p style='color: #888; margin: 0; font-size: 14px;'>Assets earning rewards</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col4:
-        # Calculate 24h change (mock for now)
-        daily_change = 2.3  # Will be calculated from real data
-        st.metric("24h Change", f"{daily_change:+.2f}%", 
-                 delta_color="normal" if daily_change >= 0 else "inverse")
+        num_holdings = len(portfolio_data) + len(staked_data)
+        st.markdown(f"""
+        <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid #ff7f0e;'>
+            <h4 style='color: #ff7f0e; margin: 0;'>🪙 Total Assets</h4>
+            <h1 style='color: white; margin: 10px 0;'>{num_holdings}</h1>
+            <p style='color: #888; margin: 0; font-size: 14px;'>Liquid + Staked</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
     
-    # Holdings table
-    st.subheader("Current Holdings")
-    holdings_df = pd.DataFrame(holdings)
-    st.dataframe(holdings_df, use_container_width=True, hide_index=True)
+    # Holdings table with better formatting
+    st.markdown("### 📋 Current Holdings")
+    
+    if holdings:
+        holdings_df = pd.DataFrame(holdings)
+        
+        # Style the dataframe
+        st.dataframe(
+            holdings_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Symbol": st.column_config.TextColumn("Symbol", width="small"),
+                "Quantity": st.column_config.TextColumn("Quantity", width="medium"),
+                "Current Price": st.column_config.TextColumn("Current Price", width="medium"),
+                "Value": st.column_config.TextColumn("Value", width="medium"),
+                "P&L": st.column_config.TextColumn("P&L", width="medium"),
+                "P&L %": st.column_config.TextColumn("P&L %", width="small"),
+                "% Portfolio": st.column_config.TextColumn("% Portfolio", width="small"),
+            }
+        )
+        
+        st.caption("💡 **Note:** P&L is calculated from average buy price. Since we don't have your historical trades, P&L may show as $0.00")
+    else:
+        st.info("No liquid holdings to display")
+    
+    # Staked Assets Section
+    if staked_data:
+        st.markdown("---")
+        st.markdown("### 🔒 Staked & Bonded Assets")
+        st.info("💰 **These assets are earning staking rewards!** They're locked but still yours and generating passive income.")
+        
+        staked_holdings = []
+        total_staked_value = 0
+        
+        for symbol, data in staked_data.items():
+            quantity = data['quantity']
+            current_price = data['current_price']
+            stake_type = data['stake_type']
+            raw_asset = data['raw_asset']
+            
+            current_value = quantity * current_price
+            total_staked_value += current_value
+            
+            staked_holdings.append({
+                'Symbol': symbol,
+                'Type': stake_type,
+                'Quantity': f"{quantity:.8f}",
+                'Current Price': f"${current_price:,.2f}" if current_price > 0 else "N/A",
+                'Value': f"${current_value:,.4f}",
+                'Kraken Asset': raw_asset
+            })
+        
+        if staked_holdings:
+            staked_df = pd.DataFrame(staked_holdings)
+            st.dataframe(
+                staked_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Symbol": st.column_config.TextColumn("Symbol", width="small"),
+                    "Type": st.column_config.TextColumn("Staking Type", width="medium"),
+                    "Quantity": st.column_config.TextColumn("Quantity", width="medium"),
+                    "Current Price": st.column_config.TextColumn("Current Price", width="small"),
+                    "Value": st.column_config.TextColumn("Value", width="medium"),
+                    "Kraken Asset": st.column_config.TextColumn("Kraken Code", width="small"),
+                }
+            )
+            
+            st.markdown(f"**Total Staked Value:** ${total_staked_value:,.4f}")
+            
+            # Staking info
+            with st.expander("ℹ️ What is Staking?"):
+                st.markdown("""
+                **Staking** is like earning interest on your crypto! Here's what's happening:
+                
+                - **Bonded (.B)**: Your crypto is locked in a staking contract, earning rewards
+                - **Futures (.F)**: Futures positions (different from regular holdings)
+                - **Rewards**: You earn passive income while holding
+                - **Locked**: Can't trade immediately, but it's still yours!
+                
+                **Benefits:**
+                - 📈 Earn passive income (APY varies by asset)
+                - 🔒 Helps secure the blockchain network
+                - 💎 Encourages long-term holding
+                
+                **Note:** To trade staked assets, you'll need to unstake them first (may take time).
+                """)
+    else:
+        st.info("No holdings to display")
     
     # Portfolio allocation pie chart
-    st.subheader("Portfolio Allocation")
+    st.markdown("### 📊 Portfolio Allocation")
     
     allocation_data = pd.DataFrame([
         {'Symbol': symbol, 'Value': data['quantity'] * data['current_price']}
         for symbol, data in portfolio_data.items()
+        if data['quantity'] * data['current_price'] > 0
     ])
     
-    fig = px.pie(allocation_data, values='Value', names='Symbol', 
-                 title='Portfolio Distribution',
-                 color_discrete_sequence=px.colors.sequential.RdBu)
-    st.plotly_chart(fig, use_container_width=True)
+    if not allocation_data.empty:
+        fig = px.pie(
+            allocation_data, 
+            values='Value', 
+            names='Symbol', 
+            title='',
+            color_discrete_sequence=px.colors.qualitative.Set3,
+            hole=0.4  # Donut chart
+        )
+        fig.update_traces(
+            textposition='inside',
+            textinfo='percent+label',
+            textfont_size=14
+        )
+        fig.update_layout(
+            height=400,
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+        )
+        st.plotly_chart(fig, use_container_width=True)
     
-    # Info box
-    st.info("📝 **Note:** This is paper trading mode. To enable live trading, add your Kraken API keys to `config/secrets.yaml`")
+    # Status info
+    st.success("✅ **Connected to Kraken** - Your portfolio is live and updating with real-time prices!")
 
 
 def show_live_prices():
@@ -230,7 +504,8 @@ def show_live_prices():
     }
     
     # Fetch ticker data
-    ticker_data = KrakenAPI.get_ticker(list(cryptos.keys()))
+    kraken_api = KrakenAPI()
+    ticker_data = kraken_api.get_ticker(list(cryptos.keys()))
     
     if not ticker_data:
         st.error("Unable to fetch price data. Please try again.")
@@ -288,7 +563,8 @@ def show_live_prices():
         )
     
     # Fetch OHLC data
-    ohlc_data = KrakenAPI.get_ohlc(selected_crypto, interval)
+    kraken_api = KrakenAPI()
+    ohlc_data = kraken_api.get_ohlc(selected_crypto, interval)
     
     if ohlc_data:
         # Convert to DataFrame
