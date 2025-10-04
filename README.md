@@ -7,6 +7,23 @@ A machine learning-powered cryptocurrency trading application that uses LSTM neu
 ![GCP](https://img.shields.io/badge/Google%20Cloud-Platform-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+## 🎉 Current Status: Phase 1 Complete!
+
+**Last Updated:** October 4, 2025
+
+### ✅ What's Working Now:
+- **Streamlit Dashboard** - Fully functional web application
+- **Live Price Tracking** - Real-time data from Kraken API (6+ cryptocurrencies)
+- **Interactive Charts** - Candlestick charts with multiple time intervals
+- **Portfolio View** - Mock portfolio with live price updates
+- **API Integration** - Kraken API client with retry logic and rate limiting
+- **HTML Dashboard** - Alternative standalone HTML interface
+
+### 🚧 In Progress:
+- Phase 2: ML Model Development (LSTM for price predictions)
+
+### 📍 Current Phase: Phase 1 - Data Pipeline ✅ COMPLETE
+
 ## 🎯 Project Overview
 
 This application combines quantitative finance, machine learning, and automated trading to:
@@ -115,22 +132,22 @@ crypto-trading-app/
 ### Prerequisites
 
 - Python 3.9 or higher
-- Google Cloud Platform account with billing enabled
-- Kraken account with API keys (supports US-based trading)
-- QuantConnect account (free tier available)
-- Basic understanding of cryptocurrency trading
+- Internet connection (for Kraken API)
+- *Optional:* Google Cloud Platform account (for cloud deployment - Phase 7)
+- *Optional:* Kraken API keys (for live trading - not needed yet!)
+- *Optional:* QuantConnect account (for backtesting - Phase 6)
 
-### Installation
+### Quick Start (5 Minutes)
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/crypto-trading-app.git
-   cd crypto-trading-app
+   git clone https://github.com/anhtdang92/Kraken_Cloud_ML_Strat.git
+   cd Kraken_Cloud_ML_Strat
    ```
 
 2. **Create virtual environment**
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
@@ -139,30 +156,55 @@ crypto-trading-app/
    pip install -r requirements.txt
    ```
 
-4. **Configure GCP**
-   ```bash
-   gcloud auth login
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-
-5. **Set up secrets**
-   ```bash
-   cp config/secrets.yaml.example config/secrets.yaml
-   # Edit secrets.yaml with your Kraken API keys
-   
-   # Upload to Secret Manager
-   gcloud secrets create kraken-api-key --data-file=config/secrets.yaml
-   ```
-
-6. **Initialize BigQuery tables**
-   ```bash
-   python data/bigquery_handler.py --init
-   ```
-
-7. **Run the dashboard**
+4. **Run the dashboard**
    ```bash
    streamlit run app.py
    ```
+
+5. **Open in browser**
+   - Dashboard will automatically open at `http://localhost:8501`
+   - Or open `index.html` for the HTML version
+
+That's it! No API keys needed to start exploring live crypto prices.
+
+### Testing Kraken API
+
+```bash
+# Test API connectivity (no keys required)
+python kraken_test.py
+
+# Test with authentication (requires API keys)
+export KRAKEN_API_KEY="your_key"
+export KRAKEN_API_SECRET="your_secret"
+python kraken_test.py --with-auth
+```
+
+### Optional: Adding API Keys (For Live Trading Later)
+
+1. **Get API keys from Kraken:**
+   - Go to Kraken → Settings → API
+   - Create key with: "Query Funds" + "Create & Modify Orders"
+
+2. **Configure secrets:**
+   ```bash
+   cp config/secrets.yaml.example config/secrets.yaml
+   # Edit secrets.yaml with your keys
+   ```
+
+3. **Test authentication:**
+   ```bash
+   python kraken_test.py --with-auth
+   ```
+
+### Optional: Configure GCP (Phase 7 - Cloud Deployment)
+
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# Upload secrets to Secret Manager
+gcloud secrets create kraken-api-key --data-file=config/secrets.yaml
+```
 
 ### Configuration
 
@@ -213,10 +255,18 @@ Upload `quantconnect/backtest_strategy.py` to QuantConnect and configure:
 
 ## 🏗️ Development Roadmap
 
-### Phase 1: Data Pipeline ✅
+### Phase 1: Data Pipeline ✅ COMPLETE
 - [x] Kraken API data fetcher
-- [x] BigQuery schema and storage
-- [x] Automated daily data updates
+- [x] Kraken API client with retry logic
+- [x] Rate limiting and error handling
+- [x] Public endpoint integration (no API keys required)
+- [x] Streamlit dashboard foundation
+- [x] Live price tracking for 6+ cryptocurrencies
+- [x] Interactive candlestick charts
+- [x] Portfolio view with real-time updates
+- [x] HTML alternative dashboard
+- [ ] BigQuery schema and storage (Phase 7)
+- [ ] Automated daily data updates (Phase 7)
 
 ### Phase 2: ML Foundation 🚧
 - [ ] LSTM model architecture
