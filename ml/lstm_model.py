@@ -35,6 +35,53 @@ try:
 except ImportError:
     print("⚠️  TensorFlow not installed. Install with: pip install tensorflow")
     HAS_TENSORFLOW = False
+    # Create dummy classes for when TensorFlow is not available
+    class keras:
+        class Model:
+            pass
+        class Sequential:
+            def __init__(self, *args, **kwargs):
+                pass
+        class optimizers:
+            class Adam:
+                def __init__(self, *args, **kwargs):
+                    pass
+        class callbacks:
+            class EarlyStopping:
+                def __init__(self, *args, **kwargs):
+                    pass
+            class ReduceLROnPlateau:
+                def __init__(self, *args, **kwargs):
+                    pass
+        class models:
+            @staticmethod
+            def load_model(*args, **kwargs):
+                return None
+    
+    class layers:
+        class Input:
+            def __init__(self, *args, **kwargs):
+                pass
+        class LSTM:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Dropout:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Dense:
+            def __init__(self, *args, **kwargs):
+                pass
+    
+    class callbacks:
+        class EarlyStopping:
+            def __init__(self, *args, **kwargs):
+                pass
+        class ReduceLROnPlateau:
+            def __init__(self, *args, **kwargs):
+                pass
+        class History:
+            def __init__(self, *args, **kwargs):
+                self.history = {'loss': [0.1], 'val_loss': [0.1]}
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +194,7 @@ class CryptoLSTM:
         epochs: int = 100,
         batch_size: int = 32,
         verbose: int = 1
-    ) -> keras.callbacks.History:
+    ) -> callbacks.History:
         """
         Train the LSTM model.
         

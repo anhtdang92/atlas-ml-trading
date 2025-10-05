@@ -66,6 +66,7 @@ class HistoricalDataFetcher:
         'SOL': 'SOLUSD',
         'ADA': 'ADAUSD',
         'DOT': 'DOTUSD',
+        'XRP': 'XXRPZUSD',
         'MATIC': 'MATICUSD',
         'LINK': 'LINKUSD',
         'AVAX': 'AVAXUSD'

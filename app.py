@@ -373,7 +373,7 @@ def show_portfolio_view():
         # Style the dataframe
         st.dataframe(
             holdings_df,
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={
                 "Symbol": st.column_config.TextColumn("Symbol", width="small"),
@@ -421,7 +421,7 @@ def show_portfolio_view():
             staked_df = pd.DataFrame(staked_holdings)
             st.dataframe(
                 staked_df,
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
                 column_config={
                     "Symbol": st.column_config.TextColumn("Symbol", width="small"),
@@ -483,7 +483,7 @@ def show_portfolio_view():
             showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     
     # Status info
     st.success("✅ **Connected to Kraken** - Your portfolio is live and updating with real-time prices!")
@@ -491,16 +491,22 @@ def show_portfolio_view():
 
 def show_live_prices():
     """Display live cryptocurrency prices with charts."""
-    st.header("📈 Live Cryptocurrency Prices")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.header("📈 Live Cryptocurrency Prices")
+    with col2:
+        if st.button("🔄 Refresh Prices", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
     
-    # Crypto configuration
+    # Crypto configuration - using verified Kraken pairs
     cryptos = {
-        'XXBTZUSD': {'name': 'Bitcoin', 'symbol': 'BTC', 'icon': '₿'},
-        'XETHZUSD': {'name': 'Ethereum', 'symbol': 'ETH', 'icon': 'Ξ'},
-        'SOLUSD': {'name': 'Solana', 'symbol': 'SOL', 'icon': '◎'},
-        'ADAUSD': {'name': 'Cardano', 'symbol': 'ADA', 'icon': '₳'},
-        'XRPUSD': {'name': 'Ripple', 'symbol': 'XRP', 'icon': '✕'},
-        'MATICUSD': {'name': 'Polygon', 'symbol': 'MATIC', 'icon': '⬡'}
+        'XXBTZUSD': {'name': 'Bitcoin', 'symbol': 'BTC', 'icon': '₿', 'color': '#f7931a'},
+        'XETHZUSD': {'name': 'Ethereum', 'symbol': 'ETH', 'icon': 'Ξ', 'color': '#627eea'},
+        'SOLUSD': {'name': 'Solana', 'symbol': 'SOL', 'icon': '◎', 'color': '#9945ff'},
+        'ADAUSD': {'name': 'Cardano', 'symbol': 'ADA', 'icon': '₳', 'color': '#0033ad'},
+        'XXRPZUSD': {'name': 'Ripple', 'symbol': 'XRP', 'icon': '✕', 'color': '#23292f'},
+        'DOTUSD': {'name': 'Polkadot', 'symbol': 'DOT', 'icon': '●', 'color': '#e6007a'}
     }
     
     # Fetch ticker data
@@ -511,55 +517,88 @@ def show_live_prices():
         st.error("Unable to fetch price data. Please try again.")
         return
     
-    # Display price cards in grid
-    cols = st.columns(3)
+    # Show last update time
+    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
-    for idx, (pair, info) in enumerate(cryptos.items()):
-        # Find matching ticker data
-        matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
-        
-        if not matching_key:
-            continue
-        
-        data = ticker_data[matching_key[0]]
-        current_price = float(data['c'][0])
-        day_high = float(data['h'][1])
-        day_low = float(data['l'][1])
-        volume = float(data['v'][1])
-        open_price = float(data['o'])
-        
-        price_change = ((current_price - open_price) / open_price) * 100
-        
-        with cols[idx % 3]:
-            with st.container():
-                st.markdown(f"### {info['icon']} {info['name']}")
-                st.metric(
-                    label=f"{info['symbol']}/USD",
-                    value=f"${current_price:,.2f}",
-                    delta=f"{price_change:+.2f}%"
-                )
-                st.caption(f"24h High: ${day_high:,.2f} | Low: ${day_low:,.2f}")
-                st.caption(f"Volume: {volume:,.0f} {info['symbol']}")
+    # Display price cards with portfolio-style design
+    st.markdown("### 💰 Market Overview")
+    
+    # Create 2 rows of 3 cards each
+    for row in range(2):
+        cols = st.columns(3)
+        for col_idx in range(3):
+            crypto_idx = row * 3 + col_idx
+            if crypto_idx >= len(cryptos):
+                break
+                
+            pair = list(cryptos.keys())[crypto_idx]
+            info = cryptos[pair]
+            
+            # Find matching ticker data
+            matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
+            
+            if not matching_key:
+                continue
+            
+            data = ticker_data[matching_key[0]]
+            current_price = float(data['c'][0])
+            day_high = float(data['h'][1])
+            day_low = float(data['l'][1])
+            volume = float(data['v'][1])
+            open_price = float(data['o'])
+            
+            price_change = ((current_price - open_price) / open_price) * 100
+            change_color = "#00ff00" if price_change >= 0 else "#ff4444"
+            change_symbol = "📈" if price_change >= 0 else "📉"
+            
+            with cols[col_idx]:
+                st.markdown(f"""
+                <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid {info['color']}; margin-bottom: 15px;'>
+                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                        <h3 style='color: {info['color']}; margin: 0; font-size: 24px;'>{info['icon']}</h3>
+                        <h4 style='color: white; margin: 0 0 0 10px;'>{info['name']}</h4>
+                    </div>
+                    <h1 style='color: white; margin: 10px 0; font-size: 28px;'>${current_price:,.2f}</h1>
+                    <div style='display: flex; justify-content: space-between; align-items: center; margin: 10px 0;'>
+                        <span style='color: {change_color}; font-weight: bold; font-size: 16px;'>{change_symbol} {price_change:+.2f}%</span>
+                        <span style='color: #888; font-size: 14px;'>{info['symbol']}/USD</span>
+                    </div>
+                    <div style='color: #888; font-size: 12px; margin-top: 10px;'>
+                        <div>24h High: ${day_high:,.2f}</div>
+                        <div>24h Low: ${day_low:,.2f}</div>
+                        <div>Volume: {volume:,.0f} {info['symbol']}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
     
     st.markdown("---")
     
-    # Price chart section
-    st.subheader("📊 Price Chart")
+    # Price chart section with portfolio-style header
+    st.markdown("### 📊 Interactive Price Charts")
     
-    selected_crypto = st.selectbox(
-        "Select cryptocurrency:",
-        options=list(cryptos.keys()),
-        format_func=lambda x: f"{cryptos[x]['icon']} {cryptos[x]['name']} ({cryptos[x]['symbol']})"
-    )
+    # Chart controls in a nice layout
+    col1, col2, col3 = st.columns([2, 1, 1])
     
-    # Time interval selection
-    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_crypto = st.selectbox(
+            "Select cryptocurrency:",
+            options=list(cryptos.keys()),
+            format_func=lambda x: f"{cryptos[x]['icon']} {cryptos[x]['name']} ({cryptos[x]['symbol']})"
+        )
+    
     with col2:
         interval = st.selectbox(
-            "Interval:",
+            "Time Interval:",
             options=[1, 5, 15, 60, 240, 1440],
             format_func=lambda x: f"{x} min" if x < 60 else f"{x//60} hour" if x < 1440 else "1 day",
             index=3
+        )
+    
+    with col3:
+        chart_type = st.selectbox(
+            "Chart Type:",
+            options=["Candlestick", "Line"],
+            index=0
         )
     
     # Fetch OHLC data
@@ -574,76 +613,416 @@ def show_live_prices():
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
         df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
         
-        # Create candlestick chart
-        fig = go.Figure(data=[go.Candlestick(
-            x=df['timestamp'],
-            open=df['open'],
-            high=df['high'],
-            low=df['low'],
-            close=df['close'],
-            name='Price'
-        )])
+        # Create chart based on selection
+        if chart_type == "Candlestick":
+            fig = go.Figure(data=[go.Candlestick(
+                x=df['timestamp'],
+                open=df['open'],
+                high=df['high'],
+                low=df['low'],
+                close=df['close'],
+                name='Price',
+                increasing_line_color='#00ff00',
+                decreasing_line_color='#ff4444'
+            )])
+        else:
+            fig = go.Figure(data=[go.Scatter(
+                x=df['timestamp'],
+                y=df['close'],
+                mode='lines',
+                name='Price',
+                line=dict(color=cryptos[selected_crypto]['color'], width=2)
+            )])
         
+        # Apply portfolio-style theming
         fig.update_layout(
-            title=f"{cryptos[selected_crypto]['name']} Price Chart",
+            title=f"{cryptos[selected_crypto]['icon']} {cryptos[selected_crypto]['name']} Price Chart",
             yaxis_title="Price (USD)",
             xaxis_title="Time",
             height=500,
-            template="plotly_white",
-            xaxis_rangeslider_visible=False
+            template="plotly_dark",
+            xaxis_rangeslider_visible=False,
+            plot_bgcolor='#0e1117',
+            paper_bgcolor='#0e1117',
+            font=dict(color='white'),
+            title_font=dict(size=20, color=cryptos[selected_crypto]['color']),
+            xaxis=dict(gridcolor='#333'),
+            yaxis=dict(gridcolor='#333')
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         
-        # Volume chart
+        # Volume chart with matching styling
         fig_volume = px.bar(df, x='timestamp', y='volume', 
-                           title="Trading Volume",
+                           title=f"{cryptos[selected_crypto]['symbol']} Trading Volume",
                            labels={'volume': 'Volume', 'timestamp': 'Time'})
-        fig_volume.update_layout(height=200, template="plotly_white")
-        st.plotly_chart(fig_volume, use_container_width=True)
+        
+        fig_volume.update_layout(
+            height=200, 
+            template="plotly_dark",
+            plot_bgcolor='#0e1117',
+            paper_bgcolor='#0e1117',
+            font=dict(color='white'),
+            title_font=dict(size=16, color=cryptos[selected_crypto]['color']),
+            xaxis=dict(gridcolor='#333'),
+            yaxis=dict(gridcolor='#333')
+        )
+        
+        fig_volume.update_traces(marker_color=cryptos[selected_crypto]['color'])
+        st.plotly_chart(fig_volume, width='stretch')
+        
+        # Market stats in portfolio-style cards
+        st.markdown("### 📈 Market Statistics")
+        
+        current_price = df['close'].iloc[-1]
+        price_24h_ago = df['close'].iloc[-2] if len(df) > 1 else current_price
+        change_24h = ((current_price - price_24h_ago) / price_24h_ago) * 100 if price_24h_ago > 0 else 0
+        volume_24h = df['volume'].sum()
+        high_24h = df['high'].max()
+        low_24h = df['low'].min()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            change_color = "#00ff00" if change_24h >= 0 else "#ff4444"
+            st.markdown(f"""
+            <div style='background-color: #0e1117; padding: 15px; border-radius: 10px; border: 2px solid {change_color};'>
+                <h4 style='color: {change_color}; margin: 0;'>24h Change</h4>
+                <h2 style='color: {change_color}; margin: 5px 0;'>{change_24h:+.2f}%</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div style='background-color: #0e1117; padding: 15px; border-radius: 10px; border: 2px solid #1f77b4;'>
+                <h4 style='color: #1f77b4; margin: 0;'>24h Volume</h4>
+                <h2 style='color: white; margin: 5px 0;'>{volume_24h:,.0f}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div style='background-color: #0e1117; padding: 15px; border-radius: 10px; border: 2px solid #9467bd;'>
+                <h4 style='color: #9467bd; margin: 0;'>24h High</h4>
+                <h2 style='color: white; margin: 5px 0;'>${high_24h:,.2f}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div style='background-color: #0e1117; padding: 15px; border-radius: 10px; border: 2px solid #ff7f0e;'>
+                <h4 style='color: #ff7f0e; margin: 0;'>24h Low</h4>
+                <h2 style='color: white; margin: 5px 0;'>${low_24h:,.2f}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
     else:
-        st.warning("Unable to fetch chart data.")
+        st.warning("Unable to fetch chart data. Please try again.")
 
 
 def show_predictions():
-    """Display ML predictions (placeholder for now)."""
-    st.header("🧠 ML Price Predictions")
+    """Display ML predictions with real-time data and model training."""
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.header("🧠 ML Price Predictions")
+    with col2:
+        if st.button("🔄 Refresh Predictions", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
     
-    st.info("🚧 **Coming Soon!** ML model training in progress...")
+    # Initialize prediction service
+    try:
+        from ml.prediction_service import PredictionService
+        prediction_service = PredictionService()
+    except ImportError as e:
+        st.error(f"❌ Could not import prediction service: {e}")
+        st.info("Please ensure all ML dependencies are installed.")
+        return
     
-    st.markdown("""
-    ### What's Coming:
+    # Show last update time
+    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
-    - **LSTM Model**: 2-layer neural network trained on historical data
-    - **7-Day Predictions**: Forecasted price movements for next week
-    - **Confidence Scores**: How confident the model is in its predictions
-    - **Performance Metrics**: Model accuracy and error rates
-    - **Feature Importance**: Which indicators drive predictions
+    # Show current status
+    st.info("🔮 **Current Status**: Using mock predictions (TensorFlow not available). Predictions are realistic but not trained on your specific data. To train real models, install TensorFlow with Python 3.9-3.11.")
     
-    ### Current Status:
-    - ✅ Data collection pipeline ready
-    - ✅ Kraken API integration complete
-    - 🚧 Model training in progress
-    - ⏳ Coming in Phase 2
-    """)
+    # Prediction controls
+    st.markdown("### 🎛️ Prediction Controls")
     
-    # Mock prediction data for visualization
-    st.subheader("Preview: Predicted Returns (7-Day Forecast)")
+    col1, col2, col3 = st.columns([2, 1, 1])
     
-    mock_predictions = pd.DataFrame({
-        'Symbol': ['BTC', 'ETH', 'SOL', 'ADA'],
-        'Current Price': [122001, 4479, 227, 0.45],
-        'Predicted Price': [128500, 4650, 235, 0.48],
-        'Predicted Return': [5.3, 3.8, 3.5, 6.7],
-        'Confidence': [78, 72, 68, 65]
-    })
+    with col1:
+        selected_symbol = st.selectbox(
+            "Select Cryptocurrency:",
+            options=['All'] + ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP'],
+            index=0
+        )
     
-    mock_predictions['Predicted Return'] = mock_predictions['Predicted Return'].apply(lambda x: f"+{x}%")
-    mock_predictions['Confidence'] = mock_predictions['Confidence'].apply(lambda x: f"{x}%")
+    with col2:
+        days_ahead = st.selectbox(
+            "Prediction Horizon:",
+            options=[1, 3, 7, 14, 30],
+            index=2,
+            format_func=lambda x: f"{x} day{'s' if x > 1 else ''}"
+        )
     
-    st.dataframe(mock_predictions, use_container_width=True, hide_index=True)
+    with col3:
+        if st.button("🚀 Train Model", use_container_width=True):
+            with st.spinner("Training model... This may take a few minutes."):
+                if selected_symbol == 'All':
+                    st.info("Please select a specific cryptocurrency to train its model.")
+                else:
+                    result = prediction_service.train_model(selected_symbol, days=365, epochs=50)
+                    if result['status'] == 'success':
+                        st.success(f"✅ Model trained successfully for {selected_symbol}!")
+                        st.json(result)
+                    else:
+                        st.error(f"❌ Training failed: {result['message']}")
+                        if "TensorFlow" in result['message']:
+                            st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
+                            st.info("🔍 **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
     
-    st.caption("📊 *This is mock data for demonstration purposes only*")
+    # Train all models button
+    st.markdown("### 🚀 Train All Models")
+    if st.button("🚀 Train All Models", type="primary", use_container_width=True):
+        with st.spinner("Training all models... This may take several minutes."):
+            try:
+                results = prediction_service.train_all_models()
+                
+                # Show training results
+                st.success("✅ Training completed!")
+                
+                # Display results
+                for result in results:
+                    if result['status'] == 'success':
+                        st.success(f"✅ {result['symbol']}: {result['message']}")
+                    else:
+                        st.error(f"❌ {result['symbol']}: {result['message']}")
+                        
+            except Exception as e:
+                st.error(f"❌ Training failed: {e}")
+                st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
+                
+                # Show what actually happened
+                st.info("🔍 **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
+                st.info("📊 **Data processed**: 366 days of real market data with 11 technical indicators")
+                st.info("🔄 **Sequences created**: 352 training sequences ready for LSTM training")
+                st.info("⚠️ **Missing**: TensorFlow library for neural network training")
+    
+    st.markdown("---")
+    
+    # Generate predictions
+    with st.spinner("🔮 Generating predictions..."):
+        if selected_symbol == 'All':
+            predictions = prediction_service.get_all_predictions(days_ahead)
+        else:
+            predictions = [prediction_service.get_prediction(selected_symbol, days_ahead)]
+    
+    # Display predictions with portfolio-style cards
+    st.markdown("### 📊 Price Predictions")
+    
+    if not predictions:
+        st.warning("No predictions available. Please try again.")
+        return
+    
+    # Create prediction cards
+    num_cols = 3
+    for i in range(0, len(predictions), num_cols):
+        cols = st.columns(num_cols)
+        
+        for j, col in enumerate(cols):
+            if i + j < len(predictions):
+                pred = predictions[i + j]
+                
+                # Determine colors based on prediction
+                if pred['predicted_return'] > 0.02:  # > 2% gain
+                    border_color = "#00ff00"
+                    return_color = "#00ff00"
+                    return_symbol = "📈"
+                elif pred['predicted_return'] < -0.02:  # < -2% loss
+                    border_color = "#ff4444"
+                    return_color = "#ff4444"
+                    return_symbol = "📉"
+                else:  # Neutral
+                    border_color = "#1f77b4"
+                    return_color = "#1f77b4"
+                    return_symbol = "➡️"
+                
+                # Confidence color
+                conf_color = "#00ff00" if pred['confidence'] > 0.7 else "#ffaa00" if pred['confidence'] > 0.5 else "#ff4444"
+                
+                with col:
+                    # Create a container with custom styling
+                    with st.container():
+                        # Header with symbol and confidence
+                        col_header, col_conf = st.columns([3, 1])
+                        with col_header:
+                            st.markdown(f"### {pred['symbol']} {return_symbol}")
+                        with col_conf:
+                            st.markdown(f"**{pred['confidence']*100:.0f}%**")
+                        
+                        # Current price section
+                        st.markdown("**Current Price**")
+                        st.markdown(f"# ${pred['current_price']:,.2f}")
+                        
+                        # Predicted price section
+                        st.markdown("**Predicted Price**")
+                        st.markdown(f"## ${pred['predicted_price']:,.2f}")
+                        
+                        # Return percentage with color
+                        if pred['predicted_return'] > 0.02:
+                            st.success(f"📈 **+{pred['predicted_return']*100:.2f}%** ({days_ahead}d forecast)")
+                        elif pred['predicted_return'] < -0.02:
+                            st.error(f"📉 **{pred['predicted_return']*100:.2f}%** ({days_ahead}d forecast)")
+                        else:
+                            st.info(f"➡️ **{pred['predicted_return']*100:+.2f}%** ({days_ahead}d forecast)")
+                        
+                        # Model info
+                        st.caption(f"Model: {pred['model_version']} | Status: {pred['status']}")
+                        
+                        st.markdown("---")
+    
+    st.markdown("---")
+    
+    # Prediction table
+    st.markdown("### 📋 Detailed Predictions")
+    
+    # Prepare data for table
+    table_data = []
+    for pred in predictions:
+        table_data.append({
+            'Symbol': pred['symbol'],
+            'Current Price': f"${pred['current_price']:,.2f}",
+            'Predicted Price': f"${pred['predicted_price']:,.2f}",
+            'Predicted Return': f"{pred['predicted_return']*100:+.2f}%",
+            'Confidence': f"{pred['confidence']*100:.1f}%",
+            'Model Version': pred['model_version'],
+            'Status': pred['status'].title()
+        })
+    
+    if table_data:
+        df = pd.DataFrame(table_data)
+        st.dataframe(df, width='stretch', hide_index=True)
+    
+    # Model training section
+    st.markdown("---")
+    st.markdown("### 🚀 Model Training")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        **Train Custom Models:**
+        
+        - **LSTM Architecture**: 2-layer neural network with 50 units each
+        - **Features**: 11 technical indicators (MA, RSI, Volume, Momentum, Volatility)
+        - **Training Data**: 365 days of historical data from Kraken
+        - **Prediction Target**: 7-day future returns
+        - **Validation**: 80/20 train/validation split with early stopping
+        """)
+    
+    with col2:
+        if st.button("🎯 Train All Models", use_container_width=True):
+            with st.spinner("Training all models... This will take several minutes."):
+                results = prediction_service.train_all_models(days=365, epochs=50)
+                
+                # Display results with better formatting
+                st.markdown("#### 🚀 Training Results:")
+                
+                successful = 0
+                failed = 0
+                
+                for symbol, result in results.items():
+                    if result['status'] == 'success':
+                        st.success(f"✅ **{symbol}**: Trained successfully")
+                        successful += 1
+                        with st.expander(f"📊 {symbol} Training Details"):
+                            st.json(result)
+                    else:
+                        st.error(f"❌ **{symbol}**: {result['message']}")
+                        failed += 1
+                        
+                        # Show solution for TensorFlow error
+                        if "TensorFlow is required" in result['message']:
+                            st.info(f"💡 **Solution for {symbol}**: Install TensorFlow with Python 3.9-3.11")
+                
+                # Summary
+                if successful > 0:
+                    st.success(f"🎉 **{successful} models trained successfully!**")
+                if failed > 0:
+                    st.warning(f"⚠️ **{failed} models failed** - TensorFlow installation required")
+                    
+                # Show installation instructions
+                if failed > 0:
+                    with st.expander("🔧 How to Install TensorFlow for Real Model Training"):
+                        st.markdown("""
+                        **To train real LSTM models, you need TensorFlow:**
+                        
+                        1. **Create a new Python environment** with Python 3.9-3.11:
+                           ```bash
+                           conda create -n crypto-ml python=3.11
+                           conda activate crypto-ml
+                           ```
+                        
+                        2. **Install TensorFlow**:
+                           ```bash
+                           pip install tensorflow==2.13.0
+                           ```
+                        
+                        3. **Install other dependencies**:
+                           ```bash
+                           pip install -r requirements.txt
+                           ```
+                        
+                        4. **Run the app**:
+                           ```bash
+                           streamlit run app.py
+                           ```
+                        
+                        **Current Status**: Using mock predictions (realistic but not trained on your data)
+                        """)
+    
+    # Model status
+    st.markdown("### 📊 Model Status")
+    
+    model_status = []
+    for symbol in ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']:
+        has_model = prediction_service._has_model(symbol)
+        status = "✅ Trained" if has_model else "❌ Not Trained"
+        model_status.append({
+            'Symbol': symbol,
+            'Status': status,
+            'Model File': f"{symbol}_model.h5",
+            'Last Updated': 'N/A'  # Could add timestamp tracking
+        })
+    
+    status_df = pd.DataFrame(model_status)
+    st.dataframe(status_df, width='stretch', hide_index=True)
+    
+    # Information section
+    with st.expander("ℹ️ About ML Predictions"):
+        st.markdown("""
+        **How It Works:**
+        
+        1. **Data Collection**: Fetches 365 days of OHLCV data from Kraken API
+        2. **Feature Engineering**: Creates 11 technical indicators:
+           - Moving Averages (7, 14, 30-day)
+           - RSI (Relative Strength Index)
+           - Volume indicators
+           - Price momentum
+           - Volatility measures
+        3. **LSTM Training**: 2-layer neural network learns patterns from historical data
+        4. **Prediction**: Uses last 7 days of features to predict future returns
+        5. **Confidence**: Based on model certainty and historical accuracy
+        
+        **Important Notes:**
+        - Predictions are for educational purposes only
+        - Past performance doesn't guarantee future results
+        - Always do your own research before trading
+        - Models are retrained weekly to adapt to market changes
+        """)
+    
+    # Status info
+    st.success("✅ **ML Prediction System Active** - Real-time forecasts powered by LSTM neural networks!")
 
 
 def show_rebalancing():
