@@ -286,7 +286,7 @@ def show_portfolio_view():
     total_pnl_pct = (total_pnl / total_cost) * 100 if total_cost > 0 else 0
     
     # Show last update time
-    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
+    st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
     # Calculate staked value if available
     staked_value = 0
@@ -346,7 +346,7 @@ def show_portfolio_view():
     with col3:
         st.markdown(f"""
         <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid #9467bd;'>
-            <h4 style='color: #9467bd; margin: 0;'>🔒 Staked Value</h4>
+            <h4 style='color: #9467bd; margin: 0;'>◐ Staked Value</h4>
             <h1 style='color: white; margin: 10px 0;'>${staked_value:,.4f}</h1>
             <p style='color: #888; margin: 0; font-size: 14px;'>Assets earning rewards</p>
         </div>
@@ -356,7 +356,7 @@ def show_portfolio_view():
         num_holdings = len(portfolio_data) + len(staked_data)
         st.markdown(f"""
         <div style='background-color: #0e1117; padding: 20px; border-radius: 10px; border: 2px solid #ff7f0e;'>
-            <h4 style='color: #ff7f0e; margin: 0;'>🪙 Total Assets</h4>
+            <h4 style='color: #ff7f0e; margin: 0;'>◈ Total Assets</h4>
             <h1 style='color: white; margin: 10px 0;'>{num_holdings}</h1>
             <p style='color: #888; margin: 0; font-size: 14px;'>Liquid + Staked</p>
         </div>
@@ -436,7 +436,7 @@ def show_portfolio_view():
             st.markdown(f"**Total Staked Value:** ${total_staked_value:,.4f}")
             
             # Staking info
-            with st.expander("ℹ️ What is Staking?"):
+            with st.expander("◈ What is Staking?"):
                 st.markdown("""
                 **Staking** is like earning interest on your crypto! Here's what's happening:
                 
@@ -447,8 +447,8 @@ def show_portfolio_view():
                 
                 **Benefits:**
                 - ◈ Earn passive income (APY varies by asset)
-                - 🔒 Helps secure the blockchain network
-                - 💎 Encourages long-term holding
+                - ◐ Helps secure the blockchain network
+                - ◈ Encourages long-term holding
                 
                 **Note:** To trade staked assets, you'll need to unstake them first (may take time).
                 """)
@@ -518,36 +518,36 @@ def show_live_prices():
         return
     
     # Show last update time
-    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
+    st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
     # Display price cards with portfolio-style design
     st.markdown("### ◉ Market Overview")
     
     # Create 2 rows of 3 cards each
     for row in range(2):
-        cols = st.columns(3)
+    cols = st.columns(3)
         for col_idx in range(3):
             crypto_idx = row * 3 + col_idx
             if crypto_idx >= len(cryptos):
                 break
-                
+    
             pair = list(cryptos.keys())[crypto_idx]
             info = cryptos[pair]
             
-            # Find matching ticker data
-            matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
-            
-            if not matching_key:
-                continue
-            
-            data = ticker_data[matching_key[0]]
-            current_price = float(data['c'][0])
-            day_high = float(data['h'][1])
-            day_low = float(data['l'][1])
-            volume = float(data['v'][1])
-            open_price = float(data['o'])
-            
-            price_change = ((current_price - open_price) / open_price) * 100
+        # Find matching ticker data
+        matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
+        
+        if not matching_key:
+            continue
+        
+        data = ticker_data[matching_key[0]]
+        current_price = float(data['c'][0])
+        day_high = float(data['h'][1])
+        day_low = float(data['l'][1])
+        volume = float(data['v'][1])
+        open_price = float(data['o'])
+        
+        price_change = ((current_price - open_price) / open_price) * 100
             change_color = "#00ff00" if price_change >= 0 else "#ff4444"
             change_symbol = "◈" if price_change >= 0 else "◊"
             
@@ -580,11 +580,11 @@ def show_live_prices():
     col1, col2, col3 = st.columns([2, 1, 1])
     
     with col1:
-        selected_crypto = st.selectbox(
-            "Select cryptocurrency:",
-            options=list(cryptos.keys()),
-            format_func=lambda x: f"{cryptos[x]['icon']} {cryptos[x]['name']} ({cryptos[x]['symbol']})"
-        )
+    selected_crypto = st.selectbox(
+        "Select cryptocurrency:",
+        options=list(cryptos.keys()),
+        format_func=lambda x: f"{cryptos[x]['icon']} {cryptos[x]['name']} ({cryptos[x]['symbol']})"
+    )
     
     with col2:
         interval = st.selectbox(
@@ -615,12 +615,12 @@ def show_live_prices():
         
         # Create chart based on selection
         if chart_type == "Candlestick":
-            fig = go.Figure(data=[go.Candlestick(
-                x=df['timestamp'],
-                open=df['open'],
-                high=df['high'],
-                low=df['low'],
-                close=df['close'],
+        fig = go.Figure(data=[go.Candlestick(
+            x=df['timestamp'],
+            open=df['open'],
+            high=df['high'],
+            low=df['low'],
+            close=df['close'],
                 name='Price',
                 increasing_line_color='#00ff00',
                 decreasing_line_color='#ff4444'
@@ -735,18 +735,19 @@ def show_predictions():
         from ml.prediction_service import PredictionService
         prediction_service = PredictionService()
     except ImportError as e:
-        st.error(f"❌ Could not import prediction service: {e}")
+        st.error(f"◊ Could not import prediction service: {e}")
         st.info("Please ensure all ML dependencies are installed.")
         return
     
     # Show last update time
-    st.caption(f"🕒 Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
+    st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
+    st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
     # Show current status
-    st.info("🔮 **Current Status**: Using mock predictions (TensorFlow not available). Predictions are realistic but not trained on your specific data. To train real models, install TensorFlow with Python 3.9-3.11.")
+    st.info("◊ **Current Status**: Using mock predictions (TensorFlow not available). Predictions are realistic but not trained on your specific data. To train real models, install TensorFlow with Python 3.9-3.11.")
     
     # Prediction controls
-    st.markdown("### 🎛️ Prediction Controls")
+    st.markdown("### ◈ Prediction Controls")
     
     col1, col2, col3 = st.columns([2, 1, 1])
     
@@ -776,10 +777,10 @@ def show_predictions():
                         st.success(f"◉ Model trained successfully for {selected_symbol}!")
                         st.json(result)
                     else:
-                        st.error(f"❌ Training failed: {result['message']}")
+                        st.error(f"◊ Training failed: {result['message']}")
                         if "TensorFlow" in result['message']:
                             st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
-                            st.info("🔍 **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
+                            st.info("◈ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
     
     # Train all models button
     st.markdown("### ◈ Train All Models")
@@ -796,14 +797,14 @@ def show_predictions():
                     if result['status'] == 'success':
                         st.success(f"◉ {result['symbol']}: {result['message']}")
                     else:
-                        st.error(f"❌ {result['symbol']}: {result['message']}")
+                        st.error(f"◊ {result['symbol']}: {result['message']}")
                         
             except Exception as e:
-                st.error(f"❌ Training failed: {e}")
+                st.error(f"◊ Training failed: {e}")
                 st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
                 
                 # Show what actually happened
-                st.info("🔍 **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
+                st.info("◈ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
                 st.info("◉ **Data processed**: 366 days of real market data with 11 technical indicators")
                 st.info("◐ **Sequences created**: 352 training sequences ready for LSTM training")
                 st.info("◊ **Missing**: TensorFlow library for neural network training")
@@ -811,7 +812,7 @@ def show_predictions():
     st.markdown("---")
     
     # Generate predictions
-    with st.spinner("🔮 Generating predictions..."):
+    with st.spinner("◊ Generating predictions..."):
         if selected_symbol == 'All':
             predictions = prediction_service.get_all_predictions(days_ahead)
         else:
@@ -910,7 +911,7 @@ def show_predictions():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("""
+    st.markdown("""
         **Train Custom Models:**
         
         - **LSTM Architecture**: 2-layer neural network with 50 units each
@@ -938,7 +939,7 @@ def show_predictions():
                         with st.expander(f"◉ {symbol} Training Details"):
                             st.json(result)
                     else:
-                        st.error(f"❌ **{symbol}**: {result['message']}")
+                        st.error(f"◊ **{symbol}**: {result['message']}")
                         failed += 1
                         
                         # Show solution for TensorFlow error
@@ -949,11 +950,11 @@ def show_predictions():
                 if successful > 0:
                     st.success(f"🎉 **{successful} models trained successfully!**")
                 if failed > 0:
-                    st.warning(f"⚠️ **{failed} models failed** - TensorFlow installation required")
+                    st.warning(f"◊ **{failed} models failed** - TensorFlow installation required")
                     
                 # Show installation instructions
                 if failed > 0:
-                    with st.expander("🔧 How to Install TensorFlow for Real Model Training"):
+                    with st.expander("◈ How to Install TensorFlow for Real Model Training"):
                         st.markdown("""
                         **To train real LSTM models, you need TensorFlow:**
                         
@@ -982,12 +983,12 @@ def show_predictions():
                         """)
     
     # Model status
-    st.markdown("### 📊 Model Status")
+    st.markdown("### ◉ Model Status")
     
     model_status = []
     for symbol in ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']:
         has_model = prediction_service._has_model(symbol)
-        status = "✅ Trained" if has_model else "❌ Not Trained"
+    status = "◉ Trained" if has_model else "◊ Not Trained"
         model_status.append({
             'Symbol': symbol,
             'Status': status,
@@ -999,7 +1000,7 @@ def show_predictions():
     st.dataframe(status_df, width='stretch', hide_index=True)
     
     # Information section
-    with st.expander("ℹ️ About ML Predictions"):
+    with st.expander("◈ About ML Predictions"):
         st.markdown("""
         **How It Works:**
         
@@ -1022,26 +1023,26 @@ def show_predictions():
         """)
     
     # Status info
-    st.success("✅ **ML Prediction System Active** - Real-time forecasts powered by LSTM neural networks!")
+    st.success("◉ **ML Prediction System Active** - Real-time forecasts powered by LSTM neural networks!")
 
 
 def show_rebalancing():
     """Display portfolio rebalancing interface."""
-    st.header("⚖️ Portfolio Rebalancing")
+    st.header("◐ Portfolio Rebalancing")
     
     # Import rebalancing service
     try:
         from ml.portfolio_rebalancer import PortfolioRebalancer
     except ImportError as e:
-        st.error(f"❌ Could not import portfolio rebalancer: {e}")
+        st.error(f"◊ Could not import portfolio rebalancer: {e}")
         return
     
     # Initialize rebalancer
-    paper_trading = st.sidebar.checkbox("📝 Paper Trading Mode", value=True, help="Enable paper trading to test strategies without real money")
+    paper_trading = st.sidebar.checkbox("◐ Paper Trading Mode", value=True, help="Enable paper trading to test strategies without real money")
     rebalancer = PortfolioRebalancer(paper_trading=paper_trading)
     
     # Portfolio value input
-    st.markdown("### 💰 Portfolio Configuration")
+    st.markdown("### ◉ Portfolio Configuration")
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -1055,10 +1056,10 @@ def show_rebalancing():
         )
     
     with col2:
-        use_ml = st.checkbox("🧠 Use ML Predictions", value=True, help="Enhance allocation with ML predictions")
+        use_ml = st.checkbox("◊ Use ML Predictions", value=True, help="Enhance allocation with ML predictions")
     
     # Advanced configuration
-    with st.expander("⚙️ Advanced Configuration"):
+    with st.expander("◈ Advanced Configuration"):
         col1, col2 = st.columns(2)
         
         with col1:
@@ -1129,14 +1130,14 @@ def show_rebalancing():
             })
             
             if rebalancer.save_config():
-                st.success("✅ Configuration saved successfully!")
+                st.success("◉ Configuration saved successfully!")
             else:
-                st.error("❌ Failed to save configuration")
+                st.error("◊ Failed to save configuration")
     
     st.markdown("---")
     
     # Get rebalancing summary
-    with st.spinner("🔄 Calculating rebalancing recommendations..."):
+    with st.spinner("◐ Calculating rebalancing recommendations..."):
         summary = rebalancer.get_rebalancing_summary()
     
     # Quick status overview
@@ -1145,16 +1146,16 @@ def show_rebalancing():
     total_fees = summary['metrics']['total_fees']
     
     if total_orders == 0:
-        st.success("✅ **Portfolio is perfectly balanced!** No rebalancing needed.")
+        st.success("◉ **Portfolio is perfectly balanced!** No rebalancing needed.")
     elif max_drift > 5:
-        st.warning(f"⚠️ **Significant drift detected** - {max_drift:.1f}% max drift requires rebalancing")
+        st.warning(f"◊ **Significant drift detected** - {max_drift:.1f}% max drift requires rebalancing")
     elif total_fees > 100:
-        st.info(f"💰 **High trading fees** - ${total_fees:.2f} total cost for rebalancing")
+        st.info(f"◉ **High trading fees** - ${total_fees:.2f} total cost for rebalancing")
     else:
-        st.info(f"📊 **Portfolio needs minor adjustments** - {total_orders} orders, ${total_fees:.2f} fees")
+        st.info(f"◉ **Portfolio needs minor adjustments** - {total_orders} orders, ${total_fees:.2f} fees")
     
     # Display current vs target allocation
-    st.markdown("### 📊 Current vs Target Allocation")
+    st.markdown("### ◉ Current vs Target Allocation")
     
     # Create allocation comparison
     allocation_data = []
@@ -1182,7 +1183,7 @@ def show_rebalancing():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 📈 Current Allocation")
+        st.markdown("#### ◈ Current Allocation")
         current_df = pd.DataFrame([
             {'Symbol': symbol, 'Weight': weight*100}
             for symbol, weight in summary['current_allocation'].items()
@@ -1218,7 +1219,7 @@ def show_rebalancing():
     st.markdown("---")
     
     # Display rebalancing orders
-    st.markdown("### 📋 Rebalancing Orders")
+    st.markdown("### ◉ Rebalancing Orders")
     
     if summary['orders']:
         orders_data = []
@@ -1254,7 +1255,7 @@ def show_rebalancing():
             st.metric("Sell Orders", summary['metrics']['sell_orders'])
         
     else:
-        st.success("✅ Portfolio is already balanced - no rebalancing needed!")
+        st.success("◉ Portfolio is already balanced - no rebalancing needed!")
     
     st.markdown("---")
     
@@ -1262,9 +1263,9 @@ def show_rebalancing():
     st.markdown("### 💡 Recommendations")
     
     for recommendation in summary['recommendations']:
-        if "⚠️" in recommendation:
+        if "◊" in recommendation:
             st.warning(recommendation)
-        elif "💰" in recommendation or "📦" in recommendation:
+        elif "◉" in recommendation:
             st.info(recommendation)
         elif "🚨" in recommendation:
             st.error(recommendation)
@@ -1274,42 +1275,42 @@ def show_rebalancing():
     st.markdown("---")
     
     # Execution section
-    st.markdown("### 🚀 Execute Rebalancing")
+    st.markdown("### ◈ Execute Rebalancing")
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("📝 Execute Paper Trading", type="primary", use_container_width=True):
+        if st.button("◐ Execute Paper Trading", type="primary", use_container_width=True):
             with st.spinner("Executing paper trading rebalancing..."):
                 result = rebalancer.execute_rebalancing(portfolio_value)
                 
                 if result['status'] == 'success':
-                    st.success(f"✅ Paper trading executed successfully!")
-                    st.success(f"📊 {result['orders_executed']} orders executed")
-                    st.success(f"💰 Total fees: ${result['total_fees']:.2f}")
+                    st.success(f"◉ Paper trading executed successfully!")
+                    st.success(f"◉ {result['orders_executed']} orders executed")
+                    st.success(f"◉ Total fees: ${result['total_fees']:.2f}")
                     
                     # Show executed orders
-                    with st.expander("📋 View Executed Orders"):
+                    with st.expander("◉ View Executed Orders"):
                         for order in result['orders']:
                             st.json(order)
                 else:
-                    st.error(f"❌ Execution failed: {result.get('message', 'Unknown error')}")
+                    st.error(f"◊ Execution failed: {result.get('message', 'Unknown error')}")
     
     with col2:
         if st.button("🚨 Execute Live Trading", type="secondary", use_container_width=True, disabled=True):
             st.warning("🚨 Live trading not implemented yet - use paper trading mode")
     
     # Strategy information
-    with st.expander("ℹ️ Rebalancing Strategy Details"):
-        st.markdown("""
+    with st.expander("◈ Rebalancing Strategy Details"):
+    st.markdown("""
         **Strategy Overview:**
-        
+    
         1. **Base Strategy**: Equal-weight allocation (16.67% each for 6 coins)
-        2. **ML Enhancement**: Adjust weights based on predicted returns
-        3. **Risk Controls**: 
-           - Max 40% per position
-           - Min 10% per position
-           - Min $50 trade size
+    2. **ML Enhancement**: Adjust weights based on predicted returns
+    3. **Risk Controls**: 
+        - Max 40% per position
+        - Min 10% per position
+        - Min $50 trade size
         4. **Trading Fees**: 0.16% maker fee (Kraken)
         
         **How It Works:**
@@ -1329,14 +1330,14 @@ def show_rebalancing():
     
     # Performance metrics with enhanced styling
     st.markdown("---")
-    st.markdown("### 📈 Portfolio Health Metrics")
+    st.markdown("### ◉ Portfolio Health Metrics")
     
     # Create enhanced KPI cards
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         max_drift = summary['metrics']['max_drift'] * 100
-        drift_icon = "⚠️" if max_drift > 5 else "📊" if max_drift > 2 else "✅"
+        drift_icon = "◊" if max_drift > 5 else "◉" if max_drift > 2 else "◉"
         
         with st.container():
             st.markdown(f"### {drift_icon} Max Drift")
@@ -1345,7 +1346,7 @@ def show_rebalancing():
     
     with col2:
         avg_drift = summary['metrics']['avg_drift'] * 100
-        avg_icon = "⚠️" if avg_drift > 3 else "📊" if avg_drift > 1 else "✅"
+        avg_icon = "◊" if avg_drift > 3 else "◉" if avg_drift > 1 else "◉"
         
         with st.container():
             st.markdown(f"### {avg_icon} Avg Drift")
@@ -1354,7 +1355,7 @@ def show_rebalancing():
     
     with col3:
         total_fees = summary['metrics']['total_fees']
-        fee_icon = "💰" if total_fees > 100 else "💸" if total_fees > 50 else "✅"
+        fee_icon = "◉" if total_fees > 100 else "◐" if total_fees > 50 else "◉"
         
         with st.container():
             st.markdown(f"### {fee_icon} Trading Fees")
@@ -1363,7 +1364,7 @@ def show_rebalancing():
     
     with col4:
         fee_percentage = (summary['metrics']['total_fees'] / portfolio_value) * 100
-        fee_pct_icon = "⚠️" if fee_percentage > 0.5 else "📊" if fee_percentage > 0.2 else "✅"
+        fee_pct_icon = "◊" if fee_percentage > 0.5 else "◉" if fee_percentage > 0.2 else "◉"
         
         with st.container():
             st.markdown(f"### {fee_pct_icon} Fee %")
@@ -1371,13 +1372,13 @@ def show_rebalancing():
             st.caption("Fees vs portfolio")
     
     # Additional metrics row
-    st.markdown("### 📊 Rebalancing Summary")
+    st.markdown("### ◉ Rebalancing Summary")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         total_orders = len(summary['orders'])
-        order_icon = "📋" if total_orders > 8 else "📝" if total_orders > 4 else "✅"
+        order_icon = "◉" if total_orders > 8 else "◐" if total_orders > 4 else "◉"
         
         with st.container():
             st.markdown(f"### {order_icon} Total Orders")
@@ -1386,7 +1387,7 @@ def show_rebalancing():
     
     with col2:
         buy_orders = summary['metrics']['buy_orders']
-        buy_icon = "📈" if buy_orders > 0 else "➖"
+        buy_icon = "◈" if buy_orders > 0 else "➖"
         
         with st.container():
             st.markdown(f"### {buy_icon} Buy Orders")
@@ -1395,7 +1396,7 @@ def show_rebalancing():
     
     with col3:
         sell_orders = summary['metrics']['sell_orders']
-        sell_icon = "📉" if sell_orders > 0 else "➖"
+        sell_icon = "◊" if sell_orders > 0 else "➖"
         
         with st.container():
             st.markdown(f"### {sell_icon} Sell Orders")
@@ -1413,7 +1414,7 @@ def show_rebalancing():
         fee_score = max(0, 100 - (fee_pct * 200))     # Penalty for high fees
         health_score = (drift_score + fee_score) / 2
         
-        health_icon = "⚠️" if health_score < 60 else "📊" if health_score < 80 else "✅"
+        health_icon = "◊" if health_score < 60 else "◉" if health_score < 80 else "◉"
         
         with st.container():
             st.markdown(f"### {health_icon} Health Score")
@@ -1421,7 +1422,7 @@ def show_rebalancing():
             st.caption("Portfolio balance")
     
     # Drift analysis details
-    with st.expander("📊 Detailed Drift Analysis"):
+    with st.expander("◉ Detailed Drift Analysis"):
         drift_data = []
         for symbol, analysis in summary['drift_analysis'].items():
             drift_data.append({
@@ -1440,7 +1441,7 @@ def show_rebalancing():
     
     # Status info
     mode_text = "Paper Trading" if paper_trading else "Live Trading"
-    st.success(f"✅ **Portfolio Rebalancer Active** - {mode_text} mode with ML-enhanced allocation strategy!")
+    st.success(f"◉ **Portfolio Rebalancer Active** - {mode_text} mode with ML-enhanced allocation strategy!")
 
 
 def main():
@@ -1481,7 +1482,7 @@ def main():
             margin: 0 0 15px 0;
             font-size: 24px;
             font-weight: bold;
-        '>🚀 Crypto ML Dashboard</h2>
+        '>◈ Crypto ML Dashboard</h2>
         <p style='
             color: #888;
             text-align: center;
@@ -1550,10 +1551,10 @@ def main():
         
         # Update URL parameters
         page_url_map = {
-            "📊 Portfolio": "portfolio",
-            "📈 Live Prices": "prices", 
-            "🧠 Predictions": "predictions",
-            "⚖️ Rebalancing": "rebalancing"
+            "◉ Portfolio": "portfolio",
+            "◈ Live Prices": "prices", 
+            "◊ Predictions": "predictions",
+            "◐ Rebalancing": "rebalancing"
         }
         
         st.query_params.page = page_url_map[page]
@@ -1577,7 +1578,7 @@ def main():
             margin: 5px 0;
             text-align: center;
         '>
-            <div style='color: #4ecdc4; font-size: 20px; margin-bottom: 5px;'>✅</div>
+            <div style='color: #4ecdc4; font-size: 20px; margin-bottom: 5px;'>◉</div>
             <div style='color: white; font-size: 12px; font-weight: bold;'>Kraken API</div>
             <div style='color: #888; font-size: 10px;'>Connected</div>
         </div>
@@ -1609,7 +1610,7 @@ def main():
         margin: 10px 0;
         text-align: center;
     '>
-        <div style='color: #45b7d1; font-size: 20px; margin-bottom: 5px;'>📝</div>
+        <div style='color: #45b7d1; font-size: 20px; margin-bottom: 5px;'>◐</div>
         <div style='color: white; font-size: 12px; font-weight: bold;'>Paper Trading</div>
         <div style='color: #888; font-size: 10px;'>Safe Mode</div>
     </div>
@@ -1617,7 +1618,7 @@ def main():
     
     # Enhanced about section
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### ℹ️ About")
+    st.sidebar.markdown("### ◈ About")
     st.sidebar.markdown("""
     <div style='
         background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
@@ -1626,7 +1627,7 @@ def main():
         padding: 15px;
         margin: 10px 0;
     '>
-        <div style='color: #45b7d1; font-weight: bold; margin-bottom: 10px;'>🚀 Crypto ML Dashboard</div>
+        <div style='color: #45b7d1; font-weight: bold; margin-bottom: 10px;'>◈ Crypto ML Dashboard</div>
         <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Version:</strong> 1.0.0</div>
         <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Mode:</strong> Development</div>
         <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Data Source:</strong> Kraken API</div>
@@ -1635,7 +1636,7 @@ def main():
     """, unsafe_allow_html=True)
     
     # Progress indicator
-    st.sidebar.markdown("### 📊 System Progress")
+    st.sidebar.markdown("### ◉ System Progress")
     
     # Mock progress data
     progress_data = {
@@ -1772,11 +1773,11 @@ def main():
     st.sidebar.markdown("### ◐ Refresh Controls")
     
     # Refresh button with better styling
-    if st.sidebar.button("🔄 Refresh Data", use_container_width=True, type="primary"):
+    if st.sidebar.button("◐ Refresh Data", use_container_width=True, type="primary"):
         st.rerun()
     
     # Auto-refresh toggle
-    auto_refresh = st.sidebar.checkbox("⏰ Auto-refresh (60s)", value=False, help="Automatically refresh data every 60 seconds")
+    auto_refresh = st.sidebar.checkbox("◐ Auto-refresh (60s)", value=False, help="Automatically refresh data every 60 seconds")
     
     if auto_refresh:
         time.sleep(60)
@@ -1803,7 +1804,7 @@ def main():
     st.sidebar.markdown("### ◈ Quick Actions")
     
     # Add some quick action buttons
-    if st.sidebar.button("🔄 Refresh All Data", use_container_width=True):
+    if st.sidebar.button("◐ Refresh All Data", use_container_width=True):
         st.rerun()
     
     if st.sidebar.button("◉ View Portfolio", use_container_width=True):
