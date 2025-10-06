@@ -130,7 +130,7 @@ def show_portfolio_view():
     """Display portfolio overview with holdings and performance."""
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.header("💼 Portfolio Overview")
+        st.header("◉ Portfolio Overview")
     with col2:
         if st.button("◐ Refresh Data", use_container_width=True):
             st.cache_data.clear()
@@ -386,7 +386,7 @@ def show_portfolio_view():
             }
         )
         
-        st.caption("💡 **Note:** P&L is calculated from average buy price. Since we don't have your historical trades, P&L may show as $0.00")
+        st.caption("◉ **Note:** P&L is calculated from average buy price. Since we don't have your historical trades, P&L may show as $0.00")
     else:
         st.info("No liquid holdings to display")
     
@@ -446,9 +446,9 @@ def show_portfolio_view():
                 - **Locked**: Can't trade immediately, but it's still yours!
                 
                 **Benefits:**
-                - ◈ Earn passive income (APY varies by asset)
+                - ◉ Earn passive income (APY varies by asset)
                 - ◐ Helps secure the blockchain network
-                - ◈ Encourages long-term holding
+                - ◉ Encourages long-term holding
                 
                 **Note:** To trade staked assets, you'll need to unstake them first (may take time).
                 """)
@@ -741,7 +741,6 @@ def show_predictions():
     
     # Show last update time
     st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
-    st.caption(f"◐ Last updated: {datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')}")
     
     # Show current status
     st.info("◊ **Current Status**: Using mock predictions (TensorFlow not available). Predictions are realistic but not trained on your specific data. To train real models, install TensorFlow with Python 3.9-3.11.")
@@ -779,7 +778,7 @@ def show_predictions():
                     else:
                         st.error(f"◊ Training failed: {result['message']}")
                         if "TensorFlow" in result['message']:
-                            st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
+                            st.info("◉ **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
                             st.info("◈ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
     
     # Train all models button
@@ -801,7 +800,7 @@ def show_predictions():
                         
             except Exception as e:
                 st.error(f"◊ Training failed: {e}")
-                st.info("💡 **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
+                st.info("◉ **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
                 
                 # Show what actually happened
                 st.info("◈ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
@@ -944,11 +943,11 @@ def show_predictions():
                         
                         # Show solution for TensorFlow error
                         if "TensorFlow is required" in result['message']:
-                            st.info(f"💡 **Solution for {symbol}**: Install TensorFlow with Python 3.9-3.11")
+                            st.info(f"◉ **Solution for {symbol}**: Install TensorFlow with Python 3.9-3.11")
                 
                 # Summary
                 if successful > 0:
-                    st.success(f"🎉 **{successful} models trained successfully!**")
+                    st.success(f"◉ **{successful} models trained successfully!**")
                 if failed > 0:
                     st.warning(f"◊ **{failed} models failed** - TensorFlow installation required")
                     
@@ -1368,14 +1367,14 @@ def show_rebalancing():
     st.markdown("---")
     
     # Recommendations
-    st.markdown("### 💡 Recommendations")
+    st.markdown("### ◉ Recommendations")
     
     for recommendation in summary['recommendations']:
         if "◊" in recommendation:
             st.warning(recommendation)
         elif "◉" in recommendation:
             st.info(recommendation)
-        elif "🚨" in recommendation:
+        elif "◊" in recommendation and "ALERT" in recommendation:
             st.error(recommendation)
         else:
             st.success(recommendation)
@@ -1405,8 +1404,8 @@ def show_rebalancing():
                     st.error(f"◊ Execution failed: {result.get('message', 'Unknown error')}")
     
     with col2:
-        if st.button("🚨 Execute Live Trading", type="secondary", use_container_width=True, disabled=True):
-            st.warning("🚨 Live trading not implemented yet - use paper trading mode")
+        if st.button("◊ Execute Live Trading", type="secondary", use_container_width=True, disabled=True):
+            st.warning("◊ Live trading not implemented yet - use paper trading mode")
     
     # Strategy information
     with st.expander("◈ Rebalancing Strategy Details"):
@@ -1782,40 +1781,45 @@ def main():
         st.query_params.page = page_url_map[page_name]
         st.rerun()
     
-    # Navigation buttons with futuristic icons and descriptions
+    # Clean, intuitive navigation buttons
     nav_buttons = [
-        ("◉ Portfolio", "View your crypto portfolio", "portfolio"),
-        ("◈ Live Prices", "Real-time market prices", "prices"),
-        ("◊ Predictions", "ML price predictions", "predictions"),
-        ("◐ Rebalancing", "Portfolio rebalancing", "rebalancing")
+        ("◉ Portfolio", "Your crypto holdings & performance"),
+        ("◈ Live Prices", "Real-time market data & charts"),
+        ("◊ Predictions", "ML-powered price forecasts"),
+        ("◐ Rebalancing", "Smart portfolio rebalancing")
     ]
     
-    for page_name, description, page_key in nav_buttons:
+    for page_name, description in nav_buttons:
         # Determine if this is the current page
         is_current = st.session_state.current_page == page_name
         
         if is_current:
-            # Current page button with active styling
+            # Current page - highlighted
             st.sidebar.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #45b7d1 0%, #4ecdc4 100%);
                 color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 8px 0;
-                text-align: center;
+                padding: 18px 20px;
+                border-radius: 12px;
+                margin: 10px 0;
+                text-align: left;
                 font-weight: bold;
-                box-shadow: 0 4px 15px rgba(69, 183, 209, 0.3);
+                box-shadow: 0 6px 20px rgba(69, 183, 209, 0.4);
                 border: 2px solid #45b7d1;
+                cursor: pointer;
+                transition: all 0.3s ease;
             '>
-                <div style='font-size: 16px; margin-bottom: 5px;'>{page_name}</div>
-                <div style='font-size: 12px; opacity: 0.9;'>{description}</div>
-                <div style='font-size: 10px; margin-top: 5px; opacity: 0.8;'>✓ Active</div>
+                <div style='font-size: 18px; margin-bottom: 8px; display: flex; align-items: center;'>
+                    <span style='margin-right: 8px;'>{page_name.split()[0]}</span>
+                    <span style='font-size: 14px; opacity: 0.9;'>{page_name.split(' ', 1)[1] if ' ' in page_name else ''}</span>
+                </div>
+                <div style='font-size: 13px; opacity: 0.9; margin-bottom: 5px;'>{description}</div>
+                <div style='font-size: 11px; opacity: 0.8; font-weight: 500;'>✓ Currently Active</div>
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Inactive page button
-            if st.sidebar.button(f"{page_name}", use_container_width=True, help=description):
+            # Inactive page - clean button style
+            if st.sidebar.button(f"{page_name}", use_container_width=True, help=description, type="secondary"):
                 navigate_to_page(page_name)
     
     # Set the current page for the rest of the app
@@ -1838,57 +1842,36 @@ def main():
     
     st.sidebar.markdown("---")
     
-    # Enhanced system status
-    st.sidebar.markdown("### ◊ System Status")
+    # Compact system status
+    st.sidebar.markdown("### ◊ Status")
     
-    # Status indicators with better styling
-    col1, col2 = st.sidebar.columns(2)
-    
-    with col1:
-        st.sidebar.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-            border: 1px solid #4ecdc4;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 5px 0;
-            text-align: center;
-        '>
-            <div style='color: #4ecdc4; font-size: 20px; margin-bottom: 5px;'>◉</div>
-            <div style='color: white; font-size: 12px; font-weight: bold;'>Kraken API</div>
-            <div style='color: #888; font-size: 10px;'>Connected</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.sidebar.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-            border: 1px solid #ff6b6b;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 5px 0;
-            text-align: center;
-        '>
-            <div style='color: #ff6b6b; font-size: 20px; margin-bottom: 5px;'>⏳</div>
-            <div style='color: white; font-size: 12px; font-weight: bold;'>ML Models</div>
-            <div style='color: #888; font-size: 10px;'>Training</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Paper trading mode indicator
+    # Single status card with key indicators
     st.sidebar.markdown("""
     <div style='
         background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
         border: 1px solid #45b7d1;
-        border-radius: 10px;
-        padding: 15px;
+        border-radius: 12px;
+        padding: 16px;
         margin: 10px 0;
         text-align: center;
     '>
-        <div style='color: #45b7d1; font-size: 20px; margin-bottom: 5px;'>◐</div>
-        <div style='color: white; font-size: 12px; font-weight: bold;'>Paper Trading</div>
-        <div style='color: #888; font-size: 10px;'>Safe Mode</div>
+        <div style='display: flex; justify-content: space-around; margin-bottom: 12px;'>
+            <div style='text-align: center;'>
+                <div style='color: #4ecdc4; font-size: 18px; margin-bottom: 4px;'>◉</div>
+                <div style='color: white; font-size: 11px; font-weight: bold;'>Kraken</div>
+                <div style='color: #888; font-size: 9px;'>Connected</div>
+            </div>
+            <div style='text-align: center;'>
+                <div style='color: #ff6b6b; font-size: 18px; margin-bottom: 4px;'>⏳</div>
+                <div style='color: white; font-size: 11px; font-weight: bold;'>ML</div>
+                <div style='color: #888; font-size: 9px;'>Training</div>
+            </div>
+            <div style='text-align: center;'>
+                <div style='color: #45b7d1; font-size: 18px; margin-bottom: 4px;'>◐</div>
+                <div style='color: white; font-size: 11px; font-weight: bold;'>Paper</div>
+                <div style='color: #888; font-size: 9px;'>Safe</div>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1985,54 +1968,6 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Enhanced breadcrumb navigation
-    st.markdown("### 🧭 Navigation Path")
-    
-    breadcrumb_pages = ["◉ Portfolio", "◈ Live Prices", "◊ Predictions", "◐ Rebalancing"]
-    current_index = breadcrumb_pages.index(page)
-    
-    # Create breadcrumb with better styling
-    breadcrumb_cols = st.columns([1, 0.3, 1, 0.3, 1, 0.3, 1])
-    
-    for i, page_name in enumerate(breadcrumb_pages):
-        with breadcrumb_cols[i * 2]:  # Use every other column for pages
-            if i == current_index:
-                st.markdown(f"""
-                <div style='
-                    background: linear-gradient(135deg, #45b7d1 0%, #4ecdc4 100%);
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 10px;
-                    text-align: center;
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(69, 183, 209, 0.3);
-                '>{page_name}</div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style='
-                    background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-                    color: #888;
-                    padding: 10px 15px;
-                    border-radius: 10px;
-                    text-align: center;
-                    border: 1px solid #333;
-                    transition: all 0.3s ease;
-                '>{page_name}</div>
-                """, unsafe_allow_html=True)
-        
-        # Add arrow between pages
-        if i < len(breadcrumb_pages) - 1:
-            with breadcrumb_cols[i * 2 + 1]:  # Use the in-between columns for arrows
-                st.markdown("""
-                <div style='
-                    text-align: center;
-                    color: #666;
-                    font-size: 20px;
-                    margin-top: 10px;
-                '>→</div>
-                """, unsafe_allow_html=True)
-    st.markdown("---")
     
     # Route to selected page
     if page == "◉ Portfolio":
@@ -2059,35 +1994,10 @@ def main():
         time.sleep(60)
         st.rerun()
     
-    # Current page indicator with better styling
+    # Quick refresh control
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### ◉ Current Page")
-    st.sidebar.markdown(f"""
-    <div style='
-        background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-        border: 1px solid #45b7d1;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-        text-align: center;
-    '>
-        <div style='color: #45b7d1; font-size: 16px; font-weight: bold;'>{st.session_state.current_page}</div>
-        <div style='color: #888; font-size: 12px;'>Active Page</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Quick navigation shortcuts (optional secondary navigation)
-    st.sidebar.markdown("### ◈ Quick Actions")
-    
-    # Add some quick action buttons
-    if st.sidebar.button("◐ Refresh All Data", use_container_width=True):
+    if st.sidebar.button("◐ Refresh All Data", use_container_width=True, type="primary"):
         st.rerun()
-    
-    if st.sidebar.button("◉ View Portfolio", use_container_width=True):
-        navigate_to_page("◉ Portfolio")
-    
-    if st.sidebar.button("◈ Check Prices", use_container_width=True):
-        navigate_to_page("◈ Live Prices")
 
 
 if __name__ == "__main__":
