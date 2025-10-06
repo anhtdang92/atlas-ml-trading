@@ -566,7 +566,7 @@ def show_live_prices():
     
     # Crypto configuration - using verified Kraken pairs
     cryptos = {
-        'XXBTZUSD': {'name': 'Bitcoin', 'symbol': 'BTC', 'icon': '◉', 'color': '#f7931a'},
+        'XXBTZUSD': {'name': 'Bitcoin', 'symbol': 'BTC', 'icon': '₿', 'color': '#f7931a'},
         'XETHZUSD': {'name': 'Ethereum', 'symbol': 'ETH', 'icon': 'Ξ', 'color': '#627eea'},
         'SOLUSD': {'name': 'Solana', 'symbol': 'SOL', 'icon': '◎', 'color': '#9945ff'},
         'ADAUSD': {'name': 'Cardano', 'symbol': 'ADA', 'icon': '₳', 'color': '#0033ad'},
@@ -620,7 +620,7 @@ def show_live_prices():
                 st.markdown(f"""
                 <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 15px; border: 2px solid {info['color']}; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);'>
                     <div style='display: flex; align-items: center; margin-bottom: 10px;'>
-                        <span style='color: {info['color']}; font-size: 32px; margin-right: 12px;' class='material-symbols-outlined'>currency_bitcoin</span>
+                        <span style='color: {info['color']}; font-size: 32px; margin-right: 12px;'>{info['icon']}</span>
                         <h4 style='color: white; margin: 0;'>{info['name']}</h4>
                     </div>
                     <h1 style='color: white; margin: 10px 0; font-size: 28px;'>${current_price:,.2f}</h1>
