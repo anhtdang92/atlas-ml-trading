@@ -2106,15 +2106,15 @@ def main():
         query_params = st.query_params
         if 'page' in query_params:
             page_param = query_params['page']
-        if page_param in ["portfolio", "prices", "predictions", "rebalancing", "cloud"]:
-            page_map = {
-                "portfolio": "⚡ Portfolio",
-                "prices": "↗ Live Prices", 
-                "predictions": "◉ ML Predictions",
-                "rebalancing": "◉ Rebalancing",
-                "cloud": "☁️ Cloud Progress"
-            }
-            st.session_state.current_page = page_map[page_param]
+            if page_param in ["portfolio", "prices", "predictions", "rebalancing", "cloud"]:
+                page_map = {
+                    "portfolio": "⚡ Portfolio",
+                    "prices": "↗ Live Prices", 
+                    "predictions": "◉ ML Predictions",
+                    "rebalancing": "◉ Rebalancing",
+                    "cloud": "☁️ Cloud Progress"
+                }
+                st.session_state.current_page = page_map[page_param]
             else:
                 st.session_state.current_page = "⚡ Portfolio"
         else:
