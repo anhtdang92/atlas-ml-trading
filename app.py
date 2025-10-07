@@ -2114,7 +2114,7 @@ def main():
                 "rebalancing": "◉ Rebalancing",
                 "cloud": "☁️ Cloud Progress"
             }
-                st.session_state.current_page = page_map[page_param]
+            st.session_state.current_page = page_map[page_param]
             else:
                 st.session_state.current_page = "⚡ Portfolio"
         else:
