@@ -38,14 +38,17 @@ def get_training_logs():
     try:
         result = subprocess.run([
             'gcloud', 'ai', 'custom-jobs', 'stream-logs',
-            'projects/64620033647/locations/us-central1/customJobs/3995218109618192384',
-            '--limit=5'
-        ], capture_output=True, text=True, timeout=15)
+            'projects/64620033647/locations/us-central1/customJobs/3995218109618192384'
+        ], capture_output=True, text=True, timeout=5)
         
-        if result.returncode == 0:
-            return result.stdout.strip().split('\n')
+        if result.returncode == 0 or result.stdout:
+            logs = result.stdout.strip().split('\n')
+            non_empty_logs = [log for log in logs if log.strip()]
+            return non_empty_logs[-5:] if non_empty_logs else ["No logs available yet"]
         else:
             return [f"Log error: {result.stderr}"]
+    except subprocess.TimeoutExpired:
+        return ["Waiting for training logs... (Job may still be starting)"]
     except Exception as e:
         return [f"Log error: {str(e)}"]
 
