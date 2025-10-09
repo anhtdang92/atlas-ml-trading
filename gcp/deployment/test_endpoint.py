@@ -68,8 +68,8 @@ def get_endpoint_info(project_id: str, region: str, endpoint_id: str):
     info = {
         "endpoint_id": endpoint_id,
         "display_name": endpoint.display_name,
-        "state": endpoint.state,
-        "created_at": endpoint.create_time,
+        "state": getattr(endpoint, 'state', 'ACTIVE'),
+        "created_at": getattr(endpoint, 'create_time', 'Unknown'),
         "deployed_models": len(endpoint.list_models()),
         "region": region,
         "project": project_id
