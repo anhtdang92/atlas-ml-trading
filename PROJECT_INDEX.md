@@ -11,6 +11,13 @@
 
 ```
 Kraken_Cloud_ML_Strat/
+├── 📄 app.py                        # Main Streamlit application
+├── 📄 requirements.txt              # Python dependencies
+├── 📄 README.md                     # Project overview
+├── 📄 PROJECT_INDEX.md              # This file organization guide
+├── 📄 ROOT_STRUCTURE.md             # Root directory structure
+├── 📄 quick-start.sh                # Quick start script
+├── 📄 dev-setup.sh                  # Development setup script
 ├── 📁 docs/                          # Documentation
 │   ├── 📁 user-guides/              # User documentation
 │   ├── 📁 technical/                # Technical documentation
@@ -21,16 +28,38 @@ Kraken_Cloud_ML_Strat/
 │   ├── 📁 monitoring/               # Monitoring scripts
 │   └── 📁 setup/                    # Setup scripts
 ├── 📁 examples/                      # Example code
-│   ├── 📁 training/                 # Training examples
-│   └── 📁 deployment/               # Deployment examples
+│   └── 📁 training/                 # Training examples
 ├── 📁 tests/                         # Test suites
 │   ├── 📁 unit/                     # Unit tests
 │   └── 📁 integration/              # Integration tests
+├── 📁 assets/                        # Static assets
+│   ├── 📁 images/                   # Images
+│   ├── 📁 icons/                    # Icons
+│   └── 📁 styles/                   # Stylesheets
+├── 📁 tools/                         # Development tools
+│   └── 📁 development/              # Development utilities
+├── 📁 infrastructure/                # Infrastructure as code
+│   ├── 📁 gcp/                      # Google Cloud Platform
+│   ├── 📁 monitoring/               # Monitoring setup
+│   └── 📁 security/                 # Security configurations
+├── 📁 deployment/                    # Deployment configurations
+│   ├── 📁 docker/                   # Docker configurations
+│   ├── 📁 kubernetes/               # Kubernetes manifests
+│   └── 📁 terraform/                # Terraform configurations
+├── 📁 monitoring/                    # Monitoring and observability
+│   ├── 📁 logs/                     # Log files
+│   ├── 📁 metrics/                  # Metrics data
+│   └── 📁 dashboards/               # Monitoring dashboards
+├── 📁 backup/                        # Backup scripts and data
+│   ├── 📁 scripts/                  # Backup scripts
+│   └── 📁 data/                     # Backup data
 ├── 📁 ml/                           # Machine Learning
 ├── 📁 data/                         # Data handling
 ├── 📁 gcp/                          # Google Cloud Platform
 ├── 📁 config/                       # Configuration
-└── 📁 cloud_functions/              # Cloud functions
+├── 📁 cloud_functions/              # Cloud functions
+├── 📁 models/                       # Trained ML models
+└── 📁 venv/                         # Python virtual environment
 ```
 
 ---

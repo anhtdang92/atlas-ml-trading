@@ -1,0 +1,9 @@
+# Project Information
+NAME: Crypto ML Trading Dashboard
+VERSION: 1.0.0
+STATUS: Production Ready
+LAST_UPDATED: 2025-10-08
+MAIN_APP: app.py
+DOCUMENTATION: docs/
+SCRIPTS: scripts/
+TESTS: tests/
