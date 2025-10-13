@@ -108,48 +108,362 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
-st.markdown("""
+# Dark mode theme configuration - futuristic cyberpunk aesthetic
+theme = {
+    'bg_primary': '#0a0a0a',
+    'bg_secondary': '#1a1a1a',
+    'bg_card': 'rgba(30, 30, 30, 0.7)',
+    'bg_glass': 'rgba(20, 20, 20, 0.6)',
+    'text_primary': '#ffffff',
+    'text_secondary': '#b0b0b0',
+    'text_muted': '#6b6b6b',
+    'accent_primary': '#00d9ff',  # Cyber blue
+    'accent_secondary': '#7b2ff7',  # Electric purple
+    'accent_success': '#00ff88',  # Neon green
+    'accent_warning': '#ffaa00',  # Tech orange
+    'accent_danger': '#ff3366',  # Hot pink
+    'border_color': 'rgba(0, 217, 255, 0.15)',
+    'shadow': 'rgba(0, 217, 255, 0.2)',
+    'sidebar_bg': 'rgba(10, 10, 10, 0.98)',
+    'glow': 'rgba(0, 217, 255, 0.5)',
+}
+
+# Custom CSS with futuristic cyberpunk aesthetic
+st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
     
-    .main {
+    /* Global Styles - Futuristic Cyberpunk */
+    * {{
+        font-family: 'Rajdhani', 'Orbitron', -apple-system, sans-serif;
+        letter-spacing: 0.02em;
+    }}
+    
+    .main {{
+        background: {theme['bg_primary']};
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(0, 217, 255, 0.05) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(123, 47, 247, 0.05) 0px, transparent 50%);
         padding: 0rem 1rem;
-    }
-    .stMetric {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #0f3460;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
-    .css-1d391kg {
-        padding: 2rem 1rem;
-    }
-    h1 {
-        color: #4ecdc4;
-    }
-    .positive {
-        color: #00ff88;
-    }
-    .negative {
-        color: #ff4757;
-    }
-    .material-symbols-outlined {
-        font-family: 'Material Symbols Outlined';
-        font-weight: normal;
-        font-style: normal;
+    }}
+    
+    /* Neon glow text */
+    .neon-text {{
+        color: {theme['accent_primary']};
+        text-shadow: 0 0 10px {theme['glow']}, 0 0 20px {theme['glow']}, 0 0 30px {theme['glow']};
+    }}
+    
+    /* Sidebar Glass Effect */
+    [data-testid="stSidebar"] {{
+        background: {theme['sidebar_bg']} !important;
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        border-right: 1px solid {theme['border_color']};
+    }}
+    
+    [data-testid="stSidebar"] > div:first-child {{
+        background: transparent;
+    }}
+    
+    /* Glass Card Effect - Cyberpunk Neon */
+    .glass-card {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 16px;
+        border: 1px solid {theme['border_color']};
+        padding: 24px;
+        box-shadow: 0 8px 32px {theme['shadow']}, inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }}
+    
+    .glass-card:hover {{
+        transform: translateY(-4px);
+        border-color: {theme['accent_primary']};
+        box-shadow: 0 16px 48px {theme['shadow']}, 0 0 30px {theme['glow']}, inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }}
+    
+    .glass-card::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 16px;
+        padding: 1px;
+        background: linear-gradient(135deg, {theme['accent_primary']}, {theme['accent_secondary']});
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }}
+    
+    .glass-card:hover::before {{
+        opacity: 0.6;
+    }}
+    
+    /* Metric Cards */
+    .stMetric {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid {theme['border_color']};
+        box-shadow: 0 8px 32px {theme['shadow']};
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+    
+    .stMetric:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 12px 48px {theme['shadow']};
+    }}
+    
+    /* Headers */
+    h1, h2, h3, h4, h5, h6 {{
+        color: {theme['text_primary']} !important;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }}
+    
+    h1 {{
+        font-size: 2.5rem;
+        font-weight: 700;
+    }}
+    
+    /* Text Colors */
+    p, span, div {{
+        color: {theme['text_primary']};
+    }}
+    
+    .text-secondary {{
+        color: {theme['text_secondary']};
+    }}
+    
+    .text-muted {{
+        color: {theme['text_muted']};
+    }}
+    
+    /* Buttons - Neon Cyberpunk */
+    .stButton > button {{
+        background: linear-gradient(135deg, {theme['accent_primary']}, {theme['accent_secondary']});
+        color: white;
+        border: 1px solid {theme['accent_primary']};
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 15px;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px {theme['shadow']}, 0 0 20px {theme['glow']};
+        position: relative;
+        overflow: hidden;
+    }}
+    
+    .stButton > button:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px {theme['shadow']}, 0 0 40px {theme['glow']};
+        border-color: {theme['accent_secondary']};
+    }}
+    
+    .stButton > button:active {{
+        transform: translateY(0);
+    }}
+    
+    /* Inputs */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select,
+    .stNumberInput > div > div > input {{
+        background: {theme['bg_card']};
+        backdrop-filter: blur(10px);
+        border: 1px solid {theme['border_color']};
+        border-radius: 12px;
+        color: {theme['text_primary']};
+        padding: 12px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }}
+    
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus,
+    .stNumberInput > div > div > input:focus {{
+        border-color: {theme['accent_primary']};
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }}
+    
+    /* Dataframes */
+    .stDataFrame {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid {theme['border_color']};
+    }}
+    
+    /* Charts */
+    .js-plotly-plot {{
+        background: {theme['bg_glass']} !important;
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        border: 1px solid {theme['border_color']};
+        padding: 16px;
+    }}
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{
+        background: transparent;
+        border-radius: 8px;
+        color: {theme['text_secondary']};
+        font-weight: 500;
+        padding: 12px 20px;
+        transition: all 0.2s ease;
+    }}
+    
+    .stTabs [aria-selected="true"] {{
+        background: {theme['accent_primary']};
+        color: white;
+    }}
+    
+    /* Expander */
+    .streamlit-expanderHeader {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px);
+        border-radius: 12px;
+        border: 1px solid {theme['border_color']};
+        color: {theme['text_primary']};
+        font-weight: 500;
+        padding: 16px;
+        transition: all 0.2s ease;
+    }}
+    
+    .streamlit-expanderHeader:hover {{
+        background: {theme['bg_card']};
+        border-color: {theme['accent_primary']};
+    }}
+    
+    /* Success/Error/Warning/Info */
+    .stSuccess, .stError, .stWarning, .stInfo {{
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(20px);
+        border-radius: 12px;
+        border: 1px solid {theme['border_color']};
+        padding: 16px;
+    }}
+    
+    /* Font Awesome Icons - Futuristic */
+    .fa, .fas, .far, .fab {{
         font-size: 24px;
         line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-        -webkit-font-feature-settings: 'liga';
-        -webkit-font-smoothing: antialiased;
-    }
+        vertical-align: middle;
+    }}
+    
+    /* Icon glow effect */
+    .icon-glow {{
+        filter: drop-shadow(0 0 8px {theme['glow']});
+        transition: filter 0.3s ease;
+    }}
+    
+    .icon-glow:hover {{
+        filter: drop-shadow(0 0 16px {theme['glow']});
+    }}
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {{
+        width: 8px;
+        height: 8px;
+    }}
+    
+    ::-webkit-scrollbar-track {{
+        background: {theme['bg_secondary']};
+    }}
+    
+    ::-webkit-scrollbar-thumb {{
+        background: {theme['border_color']};
+        border-radius: 4px;
+    }}
+    
+    ::-webkit-scrollbar-thumb:hover {{
+        background: {theme['accent_primary']};
+    }}
+    
+    /* Animations */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    
+    .fade-in {{
+        animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+    
+    @keyframes pulse {{
+        0%, 100% {{ opacity: 1; }}
+        50% {{ opacity: 0.6; }}
+    }}
+    
+    .pulse {{
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }}
+    
+    /* Modern Badge */
+    .badge {{
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        background: {theme['bg_glass']};
+        backdrop-filter: blur(10px);
+        border: 1px solid {theme['border_color']};
+    }}
+    
+    /* Gradient Text - Cyberpunk Neon */
+    .gradient-text {{
+        background: linear-gradient(135deg, {theme['accent_primary']} 0%, {theme['accent_secondary']} 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        position: relative;
+    }}
+    
+    /* Cyberpunk scan lines */
+    @keyframes scan {{
+        0% {{ transform: translateY(-100%); }}
+        100% {{ transform: translateY(100%); }}
+    }}
+    
+    .scan-line {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, {theme['accent_primary']}, transparent);
+        opacity: 0.3;
+        animation: scan 4s linear infinite;
+        pointer-events: none;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -222,15 +536,38 @@ def _get_demo_portfolio():
 
 
 def show_header():
-    """Display the main header."""
+    """Display the main header - cyberpunk style."""
     col1, col2, col3 = st.columns([2, 3, 2])
     
+    with col1:
+        # Status indicator
+        st.markdown(f"""
+        <div class="fade-in" style="display: flex; align-items: center; gap: 12px;">
+            <div class="pulse" style="width: 8px; height: 8px; background: {theme['accent_success']}; border-radius: 50%; box-shadow: 0 0 12px {theme['accent_success']};"></div>
+            <span style="color: {theme['text_secondary']}; font-size: 13px; font-weight: 600; font-family: 'Orbitron', sans-serif;">ONLINE</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with col2:
-        st.title("NOVA • Crypto ML Console")
-        st.markdown("*Powered by Machine Learning & Kraken API*")
+        st.markdown(f"""
+        <div class="fade-in" style="text-align: center;">
+            <div class="scan-line"></div>
+            <h1 class="gradient-text neon-text" style="margin: 0; font-size: 2.8rem; text-shadow: 0 0 20px {theme['glow']};">N O V A</h1>
+            <p style="color: {theme['text_secondary']}; margin: 0; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.3em; font-family: 'Rajdhani', sans-serif;">
+                CRYPTO INTELLIGENCE SYSTEM
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.markdown(f"**Last Updated:** {datetime.now().strftime('%I:%M:%S %p')}")
+        st.markdown(f"""
+        <div style="text-align: right; padding-top: 10px;">
+            <span class="badge" style="background: {theme['bg_glass']}; border: 1px solid {theme['accent_primary']}40; box-shadow: 0 0 10px {theme['glow']};">
+                <i class="fas fa-clock icon-glow" style="font-size: 16px; color: {theme['accent_primary']};"></i>
+                <span style="font-family: 'Orbitron', sans-serif; font-size: 12px;">{datetime.now().strftime('%H:%M:%S')}</span>
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def show_portfolio_view():
@@ -437,76 +774,52 @@ def show_portfolio_view():
     
     with col1:
         st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #4ecdc4;
-            box-shadow: 0 8px 24px rgba(78, 205, 196, 0.2);
-        '>
-            <div style='display: flex; align-items: center; margin-bottom: 12px;'>
-                <span style='color: #4ecdc4; font-size: 32px; margin-right: 12px;' class='material-symbols-outlined'>account_balance</span>
-                <h4 style='color: #4ecdc4; margin: 0;'>Total Value</h4>
+        <div class='glass-card fade-in' style='text-align: center;'>
+            <div style='display: flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
+                <i class='fas fa-wallet icon-glow' style='font-size: 42px; color: {theme['accent_primary']};'></i>
             </div>
-            <h1 style='color: white; margin: 10px 0; font-size: 32px;'>${total_value:,.4f}</h1>
-            <p style='color: #888; margin: 0; font-size: 14px;'>Current portfolio value</p>
+            <div style='color: {theme['text_muted']}; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; font-family: "Orbitron", sans-serif;'>TOTAL VALUE</div>
+            <h1 style='color: {theme['text_primary']}; margin: 0; font-size: 2.5rem; font-weight: 700; font-family: "Orbitron", sans-serif; text-shadow: 0 0 20px {theme['glow']};'>${total_value:,.2f}</h1>
+            <p style='color: {theme['text_secondary']}; margin: 12px 0 0 0; font-size: 13px; letter-spacing: 0.05em;'>PORTFOLIO BALANCE</p>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
-        pnl_color = "#00ff88" if total_pnl >= 0 else "#ff4757"
-        pnl_icon = "trending_up" if total_pnl >= 0 else "trending_down"
+        pnl_color = theme['accent_success'] if total_pnl >= 0 else theme['accent_danger']
+        pnl_icon = "fa-arrow-trend-up" if total_pnl >= 0 else "fa-arrow-trend-down"
         st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid {pnl_color};
-            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.2);
-        '>
-            <div style='display: flex; align-items: center; margin-bottom: 12px;'>
-                <span style='color: {pnl_color}; font-size: 32px; margin-right: 12px;' class='material-symbols-outlined'>{pnl_icon}</span>
-                <h4 style='color: {pnl_color}; margin: 0;'>Total P&L</h4>
+        <div class='glass-card fade-in' style='text-align: center; animation-delay: 0.1s;'>
+            <div style='display: flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
+                <i class='fas {pnl_icon} icon-glow' style='font-size: 42px; color: {pnl_color}; filter: drop-shadow(0 0 12px {pnl_color});'></i>
             </div>
-            <h1 style='color: {pnl_color}; margin: 10px 0; font-size: 32px;'>${total_pnl:+,.4f}</h1>
-            <p style='color: #888; margin: 0; font-size: 14px;'>{total_pnl_pct:+.2f}% gain/loss</p>
+            <div style='color: {theme['text_muted']}; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; font-family: "Orbitron", sans-serif;'>TOTAL P&L</div>
+            <h1 style='color: {pnl_color}; margin: 0; font-size: 2.5rem; font-weight: 700; font-family: "Orbitron", sans-serif; text-shadow: 0 0 20px {pnl_color};'>${total_pnl:+,.2f}</h1>
+            <p style='color: {theme['text_secondary']}; margin: 12px 0 0 0; font-size: 13px; letter-spacing: 0.05em;'>{total_pnl_pct:+.2f}% RETURN</p>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #4ecdc4;
-            box-shadow: 0 8px 24px rgba(78, 205, 196, 0.2);
-        '>
-            <div style='display: flex; align-items: center; margin-bottom: 12px;'>
-                <span style='color: #4ecdc4; font-size: 32px; margin-right: 12px;' class='material-symbols-outlined'>lock</span>
-                <h4 style='color: #4ecdc4; margin: 0;'>Staked Value</h4>
+        <div class='glass-card fade-in' style='text-align: center; animation-delay: 0.2s;'>
+            <div style='display: flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
+                <i class='fas fa-lock icon-glow' style='font-size: 42px; color: {theme['accent_warning']}; filter: drop-shadow(0 0 12px {theme['accent_warning']});'></i>
             </div>
-            <h1 style='color: white; margin: 10px 0; font-size: 32px;'>${staked_value:,.4f}</h1>
-            <p style='color: #888; margin: 0; font-size: 14px;'>Assets earning rewards</p>
+            <div style='color: {theme['text_muted']}; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; font-family: "Orbitron", sans-serif;'>STAKED VALUE</div>
+            <h1 style='color: {theme['text_primary']}; margin: 0; font-size: 2.5rem; font-weight: 700; font-family: "Orbitron", sans-serif; text-shadow: 0 0 20px {theme['glow']};'>${staked_value:,.2f}</h1>
+            <p style='color: {theme['text_secondary']}; margin: 12px 0 0 0; font-size: 13px; letter-spacing: 0.05em;'>EARNING REWARDS</p>
         </div>
         """, unsafe_allow_html=True)
     
     with col4:
         num_holdings = len(portfolio_data) + len(staked_data)
         st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #4ecdc4;
-            box-shadow: 0 8px 24px rgba(78, 205, 196, 0.2);
-        '>
-            <div style='display: flex; align-items: center; margin-bottom: 12px;'>
-                <span style='color: #4ecdc4; font-size: 32px; margin-right: 12px;' class='material-symbols-outlined'>inventory_2</span>
-                <h4 style='color: #4ecdc4; margin: 0;'>Total Assets</h4>
+        <div class='glass-card fade-in' style='text-align: center; animation-delay: 0.3s;'>
+            <div style='display: flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
+                <i class='fas fa-database icon-glow' style='font-size: 42px; color: {theme['accent_secondary']}; filter: drop-shadow(0 0 12px {theme['accent_secondary']});'></i>
             </div>
-            <h1 style='color: white; margin: 10px 0; font-size: 32px;'>{num_holdings}</h1>
-            <p style='color: #888; margin: 0; font-size: 14px;'>Liquid + Staked</p>
+            <div style='color: {theme['text_muted']}; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; font-family: "Orbitron", sans-serif;'>TOTAL ASSETS</div>
+            <h1 style='color: {theme['text_primary']}; margin: 0; font-size: 2.5rem; font-weight: 700; font-family: "Orbitron", sans-serif; text-shadow: 0 0 20px {theme['glow']};'>{num_holdings}</h1>
+            <p style='color: {theme['text_secondary']}; margin: 12px 0 0 0; font-size: 13px; letter-spacing: 0.05em;'>LIQUID + STAKED</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -521,7 +834,7 @@ def show_portfolio_view():
         # Style the dataframe
         st.dataframe(
             holdings_df,
-            width='stretch',
+            use_container_width=True,
             hide_index=True,
             column_config={
                 "Symbol": st.column_config.TextColumn("Symbol", width="small"),
@@ -569,7 +882,7 @@ def show_portfolio_view():
             staked_df = pd.DataFrame(staked_holdings)
             st.dataframe(
                 staked_df,
-                width='stretch',
+                use_container_width=True,
                 hide_index=True,
                 column_config={
                     "Symbol": st.column_config.TextColumn("Symbol", width="small"),
@@ -706,20 +1019,26 @@ def show_live_prices():
 
             with cols[col_idx]:
                 st.markdown(f"""
-                <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 15px; border: 2px solid {info['color']}; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);'>
-                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
-                        <span style='color: {info['color']}; font-size: 32px; margin-right: 12px;'>{info['icon']}</span>
-                        <h4 style='color: white; margin: 0;'>{info['name']}</h4>
+                <div class='glass-card fade-in' style='animation-delay: {crypto_idx * 0.1}s;'>
+                    <div style='display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;'>
+                        <div style='display: flex; align-items: center;'>
+                            <span style='color: {info['color']}; font-size: 28px; margin-right: 10px;'>{info['icon']}</span>
+                            <div>
+                                <h4 style='color: {theme['text_primary']}; margin: 0; font-size: 1.1rem; font-weight: 600;'>{info['name']}</h4>
+                                <span style='color: {theme['text_muted']}; font-size: 12px;'>{info['symbol']}/USD</span>
+                            </div>
+                        </div>
+                        <div class='badge' style='background: {change_color}20; border-color: {change_color}40;'>
+                            <span style='color: {change_color}; font-weight: 600;'>{change_symbol} {price_change:+.2f}%</span>
+                        </div>
                     </div>
-                    <h1 style='color: white; margin: 10px 0; font-size: 28px;'>${current_price:,.2f}</h1>
-                    <div style='display: flex; justify-content: space-between; align-items: center; margin: 10px 0;'>
-                        <span style='color: {change_color}; font-weight: bold; font-size: 16px;'>{change_symbol} {price_change:+.2f}%</span>
-                        <span style='color: #888; font-size: 14px;'>{info['symbol']}/USD</span>
+                    <h1 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 2rem; font-weight: 700;'>${current_price:,.2f}</h1>
+                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: {theme['text_secondary']}; font-size: 13px;'>
+                        <div><span style='color: {theme['text_muted']}; font-size: 11px;'>24h High</span><br><strong style='color: {theme['text_primary']};'>${day_high:,.2f}</strong></div>
+                        <div><span style='color: {theme['text_muted']}; font-size: 11px;'>24h Low</span><br><strong style='color: {theme['text_primary']};'>${day_low:,.2f}</strong></div>
                     </div>
-                    <div style='color: #888; font-size: 12px; margin-top: 10px;'>
-                        <div>24h High: ${day_high:,.2f}</div>
-                        <div>24h Low: ${day_low:,.2f}</div>
-                        <div>Volume: {volume:,.0f} {info['symbol']}</div>
+                    <div style='margin-top: 12px; padding-top: 12px; border-top: 1px solid {theme['border_color']}; color: {theme['text_secondary']}; font-size: 12px;'>
+                        <span style='color: {theme['text_muted']};'>Volume:</span> <strong style='color: {theme['text_primary']};'>{volume:,.0f}</strong> {info['symbol']}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1272,7 +1591,7 @@ def show_predictions():
     
     if table_data:
         df = pd.DataFrame(table_data)
-        st.dataframe(df, width='stretch', hide_index=True)
+        st.dataframe(df, use_container_width=True, hide_index=True)
     
     # Model training section
     st.markdown("---")
@@ -1367,7 +1686,7 @@ def show_predictions():
         })
     
     status_df = pd.DataFrame(model_status)
-    st.dataframe(status_df, width='stretch', hide_index=True)
+    st.dataframe(status_df, use_container_width=True, hide_index=True)
     
     # Information section
     with st.expander("◉ About ML Predictions"):
@@ -2593,36 +2912,21 @@ def main():
         else:
             st.session_state.current_page = "⚡ Portfolio"
     
-    # Enhanced sidebar navigation
-    st.sidebar.markdown("""
-    <div style='
-        background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-        border: 1px solid #333;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    '>
-        <h2 style='
-            color: #4ecdc4;
-            text-align: center;
-            margin: 0 0 15px 0;
-            font-size: 24px;
-            font-weight: bold;
-        '><span class="material-symbols-outlined" style="margin-right: 8px; font-size: 24px;">smart_toy</span>NOVA Console</h2>
-        <p style='
-            color: #888;
-            text-align: center;
-            margin: 0;
-            font-size: 14px;
-        '>AI-Powered Trading Analytics</p>
+    # Enhanced sidebar navigation with cyberpunk glass effect
+    st.sidebar.markdown(f"""
+    <div class='glass-card fade-in' style='text-align: center; margin-bottom: 24px; border: 1px solid {theme['accent_primary']}40; box-shadow: 0 0 30px {theme['glow']};'>
+        <div style='display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, {theme['accent_primary']}, {theme['accent_secondary']}); margin-bottom: 16px; box-shadow: 0 8px 32px {theme['glow']}, inset 0 2px 4px rgba(255,255,255,0.2);'>
+            <i class="fas fa-bolt icon-glow" style="color: white; font-size: 40px;"></i>
+        </div>
+        <h2 class='gradient-text' style='margin: 0 0 8px 0; font-size: 1.9rem; letter-spacing: 0.2em;'>NOVA</h2>
+        <p style='color: {theme['text_secondary']}; margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.3em; font-family: "Rajdhani", sans-serif;'>CRYPTO INTELLIGENCE</p>
     </div>
     """, unsafe_allow_html=True)
     
-    st.sidebar.markdown("""
-    <h3 style='color: #4ecdc4; margin: 0 0 15px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 8px; font-size: 20px;'>apps</span>
-        Navigation
+    st.sidebar.markdown(f"""
+    <h3 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
+        <i class='fas fa-th' style='margin-right: 10px; font-size: 18px; color: {theme['accent_primary']};'></i>
+        NAVIGATION
     </h3>
     """, unsafe_allow_html=True)
     
@@ -2639,47 +2943,69 @@ def main():
         st.query_params.page = page_url_map[page_name]
         st.rerun()
     
-    # Clean, intuitive navigation buttons
+    # Clean, intuitive navigation buttons with icons
     nav_buttons = [
-        ("⚡ Portfolio", "Your crypto holdings & performance"),
-        ("↗ Live Prices", "Real-time market data & charts"),
-        ("◉ ML Predictions", "ML-powered price forecasts"),
-        ("◉ Rebalancing", "Smart portfolio rebalancing"),
-        ("☁️ Cloud Progress", "Google Cloud ML training status")
+        ("⚡ Portfolio", "Your crypto holdings & performance", "fa-wallet"),
+        ("↗ Live Prices", "Real-time market data & charts", "fa-chart-line"),
+        ("◉ ML Predictions", "ML-powered price forecasts", "fa-brain"),
+        ("◉ Rebalancing", "Smart portfolio rebalancing", "fa-sliders-h"),
+        ("☁️ Cloud Progress", "Google Cloud ML training status", "fa-cloud")
     ]
     
-    for page_name, description in nav_buttons:
+    for page_name, description, icon in nav_buttons:
         # Determine if this is the current page
         is_current = st.session_state.current_page == page_name
+        page_label = page_name.split(' ', 1)[1].upper() if ' ' in page_name else page_name.upper()
         
         if is_current:
-            # Current page - highlighted
+            # Current page - highlighted with glass effect
             st.sidebar.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #45b7d1 0%, #4ecdc4 100%);
-                color: white;
-                padding: 18px 20px;
-                border-radius: 12px;
-                margin: 10px 0;
-                text-align: left;
-                font-weight: bold;
-                box-shadow: 0 6px 20px rgba(69, 183, 209, 0.4);
-                border: 2px solid #45b7d1;
+            <div class='glass-card' style='
+                background: linear-gradient(135deg, {theme['accent_primary']}, {theme['accent_secondary']});
+                border: none;
+                margin: 8px 0;
+                padding: 18px 16px;
+                box-shadow: 0 8px 32px {theme['glow']};
                 cursor: pointer;
-                transition: all 0.3s ease;
             '>
-                <div style='font-size: 18px; margin-bottom: 8px; display: flex; align-items: center;'>
-                    <span style='margin-right: 8px;'>{page_name.split()[0]}</span>
-                    <span style='font-size: 14px; opacity: 0.9;'>{page_name.split(' ', 1)[1] if ' ' in page_name else ''}</span>
+                <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 8px;'>
+                    <i class='fas {icon}' style='font-size: 22px; color: white;'></i>
+                    <span style='color: white; font-size: 15px; font-weight: 700; font-family: "Orbitron", sans-serif; letter-spacing: 0.05em;'>{page_label}</span>
                 </div>
-                <div style='font-size: 13px; opacity: 0.9; margin-bottom: 5px;'>{description}</div>
-                <div style='font-size: 11px; opacity: 0.8; font-weight: 500;'>✓ Currently Active</div>
+                <div style='color: rgba(255, 255, 255, 0.85); font-size: 11px; margin-bottom: 8px; margin-left: 34px;'>{description}</div>
+                <div style='display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: rgba(255, 255, 255, 0.25); border-radius: 12px; font-size: 10px; font-weight: 700; font-family: "Orbitron", sans-serif; letter-spacing: 0.1em; margin-left: 34px;'>
+                    <i class='fas fa-check-circle' style='font-size: 12px;'></i>
+                    ACTIVE
+                </div>
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Inactive page - clean button style
-            if st.sidebar.button(f"{page_name}", use_container_width=True, help=description, type="secondary"):
-                navigate_to_page(page_name)
+            # Inactive page - clickable glass card
+            button_id = f"nav_{page_name.replace(' ', '_')}"
+            page_url = {"⚡ Portfolio": "portfolio", "↗ Live Prices": "prices", "◉ ML Predictions": "predictions", "◉ Rebalancing": "rebalancing", "☁️ Cloud Progress": "cloud"}.get(page_name, "portfolio")
+            
+            # Create clickable card with proper styling
+            col1, col2 = st.sidebar.columns([9, 1])
+            with col1:
+                st.markdown(f"""
+                <a href="?page={page_url}" style="text-decoration: none;">
+                    <div class='glass-card' style='
+                        background: {theme['bg_glass']};
+                        border: 1px solid {theme['border_color']};
+                        margin: 8px 0;
+                        padding: 18px 16px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ' onmouseover="this.style.borderColor='{theme['accent_primary']}'; this.style.boxShadow='0 8px 24px {theme['glow']}'" 
+                       onmouseout="this.style.borderColor='{theme['border_color']}'; this.style.boxShadow='0 8px 32px {theme['shadow']}'">
+                        <div style='display: flex; align-items: center; gap: 12px;'>
+                            <i class='fas {icon} icon-glow' style='font-size: 22px; color: {theme['accent_primary']};'></i>
+                            <span style='color: {theme['text_primary']}; font-size: 15px; font-weight: 700; font-family: "Orbitron", sans-serif; letter-spacing: 0.05em;'>{page_label}</span>
+                        </div>
+                        <div style='color: {theme['text_secondary']}; font-size: 11px; margin-top: 8px; margin-left: 34px;'>{description}</div>
+                    </div>
+                </a>
+                """, unsafe_allow_html=True)
     
     # Set the current page for the rest of the app
     page = st.session_state.current_page
@@ -2702,38 +3028,31 @@ def main():
     st.sidebar.markdown("---")
     
     # Compact system status
-    st.sidebar.markdown("""
-    <h3 style='color: #4ecdc4; margin: 0 0 15px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 8px; font-size: 20px;'>psychology</span>
-        Status
+    st.sidebar.markdown(f"""
+    <h3 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
+        <i class='fas fa-chart-line' style='margin-right: 10px; font-size: 18px; color: {theme['accent_primary']};'></i>
+        SYSTEM STATUS
     </h3>
     """, unsafe_allow_html=True)
     
-    # Single status card with key indicators
-    st.sidebar.markdown("""
-    <div style='
-        background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-        border: 1px solid #4ecdc4;
-        border-radius: 12px;
-        padding: 16px;
-        margin: 10px 0;
-        text-align: center;
-    '>
-        <div style='display: flex; justify-content: space-around; margin-bottom: 12px;'>
+    # Single status card with key indicators - cyberpunk style
+    st.sidebar.markdown(f"""
+    <div class='glass-card' style='text-align: center; padding: 20px; border: 1px solid {theme['accent_primary']}30;'>
+        <div style='display: flex; justify-content: space-around;'>
             <div style='text-align: center;'>
-                <div style='color: #4ecdc4; font-size: 18px; margin-bottom: 4px;' class='material-symbols-outlined'>check_circle</div>
-                <div style='color: white; font-size: 11px; font-weight: bold;'>Kraken</div>
-                <div style='color: #888; font-size: 9px;'>Connected</div>
+                <i class='fas fa-check-circle icon-glow' style='color: {theme['accent_success']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {theme['accent_success']});'></i>
+                <div style='color: {theme['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>KRAKEN</div>
+                <div style='color: {theme['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>CONNECTED</div>
             </div>
             <div style='text-align: center;'>
-                <div style='color: #ff6b6b; font-size: 18px; margin-bottom: 4px;' class='material-symbols-outlined'>model_training</div>
-                <div style='color: white; font-size: 11px; font-weight: bold;'>ML</div>
-                <div style='color: #888; font-size: 9px;'>Training</div>
+                <i class='fas fa-microchip icon-glow' style='color: {theme['accent_warning']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {theme['accent_warning']});'></i>
+                <div style='color: {theme['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>ML</div>
+                <div style='color: {theme['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>TRAINING</div>
             </div>
             <div style='text-align: center;'>
-                <div style='color: #4ecdc4; font-size: 18px; margin-bottom: 4px;' class='material-symbols-outlined'>shield</div>
-                <div style='color: white; font-size: 11px; font-weight: bold;'>Paper</div>
-                <div style='color: #888; font-size: 9px;'>Safe</div>
+                <i class='fas fa-shield-alt icon-glow' style='color: {theme['accent_primary']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {theme['accent_primary']});'></i>
+                <div style='color: {theme['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>PAPER</div>
+                <div style='color: {theme['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>SAFE</div>
             </div>
         </div>
     </div>
@@ -2741,74 +3060,63 @@ def main():
     
     # Enhanced about section
     st.sidebar.markdown("---")
-    st.sidebar.markdown("""
-    <h3 style='color: #4ecdc4; margin: 0 0 15px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 8px; font-size: 20px;'>info</span>
-        About
+    st.sidebar.markdown(f"""
+    <h3 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
+        <i class='fas fa-info-circle' style='margin-right: 10px; font-size: 18px; color: {theme['accent_primary']};'></i>
+        ABOUT
     </h3>
     """, unsafe_allow_html=True)
-    st.sidebar.markdown("""
-    <div style='
-        background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-        border: 1px solid #333;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    '>
-        <div style='color: #45b7d1; font-weight: bold; margin-bottom: 10px;'>NOVA • Crypto ML Console</div>
-        <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Version:</strong> 1.0.0</div>
-        <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Mode:</strong> Development</div>
-        <div style='color: #888; font-size: 12px; margin-bottom: 5px;'><strong>Data Source:</strong> Kraken API</div>
-        <div style='color: #888; font-size: 12px;'><strong>ML Engine:</strong> LSTM Neural Networks</div>
+    st.sidebar.markdown(f"""
+    <div class='glass-card' style='padding: 18px;'>
+        <div class='gradient-text' style='font-weight: 700; margin-bottom: 12px; font-size: 1rem;'>NOVA Console</div>
+        <div style='display: grid; gap: 8px;'>
+            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                <span style='color: {theme['text_muted']}; font-size: 11px;'>Version</span>
+                <span class='badge' style='font-size: 10px; padding: 4px 8px;'>v1.0.0</span>
+            </div>
+            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                <span style='color: {theme['text_muted']}; font-size: 11px;'>Data Source</span>
+                <span style='color: {theme['text_primary']}; font-size: 11px; font-weight: 600;'>Kraken API</span>
+            </div>
+            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                <span style='color: {theme['text_muted']}; font-size: 11px;'>ML Engine</span>
+                <span style='color: {theme['text_primary']}; font-size: 11px; font-weight: 600;'>LSTM</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
     # Progress indicator
-    st.sidebar.markdown("""
-    <h3 style='color: #4ecdc4; margin: 0 0 15px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 8px; font-size: 20px;'>analytics</span>
-        System Progress
+    st.sidebar.markdown(f"""
+    <h3 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
+        <i class='fas fa-chart-bar' style='margin-right: 10px; font-size: 18px; color: {theme['accent_primary']};'></i>
+        PROGRESS
     </h3>
     """, unsafe_allow_html=True)
     
     # Mock progress data
     progress_data = {
-        "Data Collection": 95,
-        "ML Training": 60,
-        "Portfolio Analysis": 100,
-        "Rebalancing": 85
+        "Data Collection": (95, theme['accent_success']),
+        "ML Training": (60, theme['accent_warning']),
+        "Portfolio": (100, theme['accent_success']),
+        "Rebalancing": (85, theme['accent_primary'])
     }
     
-    for component, progress in progress_data.items():
+    for component, (progress, color) in progress_data.items():
         st.sidebar.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 5px 0;
-        '>
-            <div style='
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 5px;
-            '>
-                <span style='color: white; font-size: 12px; font-weight: bold;'>{component}</span>
-                <span style='color: #45b7d1; font-size: 12px; font-weight: bold;'>{progress}%</span>
+        <div class='glass-card' style='padding: 12px; margin: 8px 0;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
+                <span style='color: {theme['text_primary']}; font-size: 11px; font-weight: 600;'>{component}</span>
+                <span style='color: {color}; font-size: 11px; font-weight: 700;'>{progress}%</span>
             </div>
-            <div style='
-                background: #333;
-                border-radius: 10px;
-                height: 6px;
-                overflow: hidden;
-            '>
+            <div style='background: {theme['bg_secondary']}; border-radius: 10px; height: 6px; overflow: hidden;'>
                 <div style='
-                    background: linear-gradient(90deg, #45b7d1 0%, #4ecdc4 100%);
+                    background: linear-gradient(90deg, {color}, {theme['accent_secondary']});
                     height: 100%;
                     width: {progress}%;
                     border-radius: 10px;
-                    transition: width 0.3s ease;
+                    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 0 8px {color}40;
                 '></div>
             </div>
         </div>
@@ -2817,28 +3125,23 @@ def main():
     # Display header
     show_header()
     
-    # Enhanced page header
+    # Enhanced page header with cyberpunk glass effect
+    page_icon_map = {
+        "⚡ Portfolio": "fa-wallet",
+        "↗ Live Prices": "fa-chart-line",
+        "◉ ML Predictions": "fa-brain",
+        "◉ Rebalancing": "fa-sliders-h",
+        "☁️ Cloud Progress": "fa-cloud"
+    }
+    page_icon = page_icon_map.get(page, "fa-th")
+    
     st.markdown(f"""
-    <div style='
-        background: linear-gradient(135deg, #0e1117 0%, #1a1a1a 100%);
-        border: 1px solid #333;
-        border-radius: 15px;
-        padding: 25px;
-        margin: 20px 0;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        text-align: center;
-    '>
-        <h1 style='
-            color: #45b7d1;
-            margin: 0 0 10px 0;
-            font-size: 32px;
-            font-weight: bold;
-        '>{page}</h1>
-        <p style='
-            color: #888;
-            margin: 0;
-            font-size: 16px;
-        '>Advanced Cryptocurrency Analytics & Trading</p>
+    <div class='glass-card fade-in' style='text-align: center; padding: 36px; margin: 24px 0; border: 1px solid {theme['accent_primary']}40; box-shadow: 0 0 40px {theme['glow']};'>
+        <div style='display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 24px; background: linear-gradient(135deg, {theme['accent_primary']}, {theme['accent_secondary']}); margin-bottom: 24px; box-shadow: 0 12px 40px {theme['glow']}, inset 0 2px 4px rgba(255,255,255,0.2);'>
+            <i class="fas {page_icon} icon-glow" style="color: white; font-size: 44px;"></i>
+        </div>
+        <h1 class='gradient-text' style='margin: 0 0 12px 0; font-size: 2.5rem; letter-spacing: 0.2em;'>{page.split(' ', 1)[1].upper() if ' ' in page else page.upper()}</h1>
+        <p style='color: {theme['text_secondary']}; margin: 0; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.3em; font-family: "Rajdhani", sans-serif;'>AI-POWERED CRYPTOCURRENCY ANALYTICS</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -2855,29 +3158,25 @@ def main():
     elif page == "☁️ Cloud Progress":
         show_cloud_progress()
     
-    # Enhanced refresh controls
+    # Enhanced refresh controls - Cyberpunk
     st.sidebar.markdown("---")
-    st.sidebar.markdown("""
-    <h3 style='color: #4ecdc4; margin: 0 0 15px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 8px; font-size: 20px;'>refresh</span>
-        Refresh Controls
+    st.sidebar.markdown(f"""
+    <h3 style='color: {theme['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
+        <i class='fas fa-sync-alt' style='margin-right: 10px; font-size: 18px; color: {theme['accent_primary']};'></i>
+        CONTROLS
     </h3>
     """, unsafe_allow_html=True)
     
-    # Refresh button with better styling
-    if st.sidebar.button("⟳ Refresh Data", use_container_width=True, type="primary"):
+    # Refresh button with cyberpunk styling
+    if st.sidebar.button("↻ SYNC DATA", use_container_width=True, type="primary"):
+        st.cache_data.clear()
         st.rerun()
     
     # Auto-refresh toggle
-    auto_refresh = st.sidebar.checkbox("⟳ Auto-refresh (60s)", value=False, help="Automatically refresh data every 60 seconds")
+    auto_refresh = st.sidebar.checkbox("⚡ AUTO-REFRESH (60S)", value=False, help="Automatically refresh data every 60 seconds")
     
     if auto_refresh:
         time.sleep(60)
-        st.rerun()
-    
-    # Quick refresh control
-    st.sidebar.markdown("---")
-    if st.sidebar.button("⟳ Refresh All Data", use_container_width=True, type="primary"):
         st.rerun()
 
 
