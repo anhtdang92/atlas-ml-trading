@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import time
 import subprocess
 import json
+import os
 
 # Helper functions for cloud progress tracking
 def get_training_job_status():
@@ -1688,11 +1689,19 @@ def show_predictions():
     for symbol in ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']:
         has_model = prediction_service._has_model(symbol)
         status = "◉ Trained" if has_model else "⊗ Not Trained"
+        
+        # Get last updated timestamp from model file
+        model_path = f"models/{symbol}_model.h5"
+        last_updated = 'N/A'
+        if os.path.exists(model_path):
+            timestamp = os.path.getmtime(model_path)
+            last_updated = datetime.fromtimestamp(timestamp).strftime('%b %d, %Y %I:%M %p')
+        
         model_status.append({
             'Symbol': symbol,
             'Status': status,
             'Model File': f"{symbol}_model.h5",
-            'Last Updated': 'N/A'  # Could add timestamp tracking
+            'Last Updated': last_updated
         })
     
     status_df = pd.DataFrame(model_status)
@@ -2990,32 +2999,22 @@ def main():
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Inactive page - clickable glass card
+            # Inactive page - use Streamlit button for navigation
             button_id = f"nav_{page_name.replace(' ', '_')}"
             page_url = {"⚡ Portfolio": "portfolio", "↗ Live Prices": "prices", "◉ ML Predictions": "predictions", "◉ Rebalancing": "rebalancing", "☁️ Cloud Progress": "cloud"}.get(page_name, "portfolio")
             
-            # Create clickable card with proper styling
-            col1, col2 = st.sidebar.columns([9, 1])
-            with col1:
-                st.markdown(f"""
-                <a href="?page={page_url}" style="text-decoration: none;">
-                    <div class='glass-card' style='
-                        background: {theme['bg_glass']};
-                        border: 1px solid {theme['border_color']};
-                        margin: 8px 0;
-                        padding: 18px 16px;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                    ' onmouseover="this.style.borderColor='{theme['accent_primary']}'; this.style.boxShadow='0 8px 24px {theme['glow']}'" 
-                       onmouseout="this.style.borderColor='{theme['border_color']}'; this.style.boxShadow='0 8px 32px {theme['shadow']}'">
-                        <div style='display: flex; align-items: center; gap: 12px;'>
-                            <i class='fas {icon} icon-glow' style='font-size: 22px; color: {theme['accent_primary']};'></i>
-                            <span style='color: {theme['text_primary']}; font-size: 15px; font-weight: 700; font-family: "Orbitron", sans-serif; letter-spacing: 0.05em;'>{page_label}</span>
-                        </div>
-                        <div style='color: {theme['text_secondary']}; font-size: 11px; margin-top: 8px; margin-left: 34px;'>{description}</div>
-                    </div>
-                </a>
-                """, unsafe_allow_html=True)
+            # Create clickable button
+            button_clicked = st.sidebar.button(
+                page_name,
+                key=button_id,
+                use_container_width=True,
+                help=description
+            )
+            
+            if button_clicked:
+                st.session_state.current_page = page_name
+                st.query_params.page = page_url
+                st.rerun()
     
     # Set the current page for the rest of the app
     page = st.session_state.current_page
