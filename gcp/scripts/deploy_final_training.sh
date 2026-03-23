@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 
 echo "◈ Deploying Final Vertex AI Training"
@@ -18,7 +18,7 @@ gcloud config set project $PROJECT_ID
 # Create training job config
 echo "◉ Creating training job configuration..."
 
-JOB_NAME="crypto-final-$(date +%Y%m%d-%H%M%S)"
+JOB_NAME="stock-final-$(date +%Y%m%d-%H%M%S)"
 
 cat > /tmp/training_config.json << EOF
 {

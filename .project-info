@@ -1,9 +1,9 @@
 # Project Information
-NAME: Crypto ML Trading Dashboard
-VERSION: 1.0.0
+NAME: ATLAS - Stock ML Intelligence System
+VERSION: 2.0.0
 STATUS: Production Ready
-LAST_UPDATED: 2025-10-08
+LAST_UPDATED: 2026-03-23
 MAIN_APP: app.py
 DOCUMENTATION: docs/
-SCRIPTS: scripts/
+SCRIPTS: bin/
 TESTS: tests/

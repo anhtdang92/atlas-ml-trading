@@ -5,9 +5,9 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-INSTANCE_NAME="crypto-ml-workbench"
+INSTANCE_NAME="stock-ml-workbench"
 
 echo "◈ Setting up Vertex AI Workbench"
 echo "◊ Run all ML development in Google Cloud!"

@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 
 echo "🎉 Training completed! Deploying prediction endpoint..."
@@ -18,7 +18,7 @@ echo "◉ Creating Vertex AI endpoint..."
 
 ENDPOINT_ID=$(gcloud ai endpoints create \
     --region=$REGION \
-    --display-name="crypto-ml-predictions-$(date +%Y%m%d-%H%M%S)" \
+    --display-name="stock-ml-predictions-$(date +%Y%m%d-%H%M%S)" \
     --format="value(name)" | cut -d'/' -f6)
 
 echo "✅ Endpoint created: $ENDPOINT_ID"

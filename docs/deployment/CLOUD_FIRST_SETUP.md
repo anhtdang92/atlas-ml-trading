@@ -26,14 +26,14 @@ This guide shows you how to set up a complete ML trading system **without instal
 ### 1. Clone and Setup
 ```bash
 git clone <your-repo>
-cd Kraken_Cloud_ML_Strat
+cd yfinance-ml-trading-strategy
 pip install streamlit pandas plotly requests python-dotenv
 ```
 
 ### 2. Authenticate with Google Cloud
 ```bash
 gcloud auth login
-gcloud config set project crypto-ml-trading-487
+gcloud config set project stock-ml-trading-487
 ```
 
 ### 3. Deploy Cloud Infrastructure
@@ -57,7 +57,7 @@ streamlit run app.py
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Your Local    │    │   Google Cloud  │    │   Kraken API    │
+│   Your Local    │    │   Google Cloud  │    │   Yahoo Finance    │
 │   Streamlit App │◄──►│   Vertex AI     │◄──►│   (Trading)     │
 │   (No ML deps)  │    │   (All ML ops)  │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -126,7 +126,7 @@ python gcp/deployment/test_endpoint.py --endpoint_id=YOUR_ENDPOINT_ID
 ### Cost Monitoring
 ```bash
 # Set up budget alerts
-gcloud billing budgets create --billing-account=YOUR_ACCOUNT --display-name="Crypto ML Budget" --budget-amount=50USD
+gcloud billing budgets create --billing-account=YOUR_ACCOUNT --display-name="Stock ML Budget" --budget-amount=50USD
 ```
 
 ## 🚨 Troubleshooting
@@ -191,7 +191,7 @@ bash gcp/scripts/deploy_budget_endpoint.sh
 2. ✅ **Deploy Endpoint** - Set up prediction endpoint  
 3. 🔄 **Test Integration** - Verify end-to-end pipeline
 4. 🔄 **Go Live** - Enable real trading (paper trading first!)
-5. 🔄 **Scale** - Add more cryptocurrencies and features
+5. 🔄 **Scale** - Add more stocks and features
 
 ## 🎓 Learning Outcomes
 

@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 
 echo "◈ Deploying Ultra Simple Vertex AI Training"
@@ -18,7 +18,7 @@ gcloud config set project $PROJECT_ID
 # Create the simplest possible training job
 echo "◉ Creating ultra simple training job..."
 
-JOB_NAME="crypto-simple-$(date +%Y%m%d-%H%M%S)"
+JOB_NAME="stock-simple-$(date +%Y%m%d-%H%M%S)"
 
 # Submit training job
 echo "◉ Submitting training job: $JOB_NAME"

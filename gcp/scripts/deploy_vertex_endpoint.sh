@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-ENDPOINT_NAME="crypto-lstm-endpoint"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+ENDPOINT_NAME="stock-lstm-endpoint"
 
 echo "◈ Deploying Vertex AI prediction endpoint..."
 
@@ -34,13 +34,13 @@ echo "◊ Endpoint created with ID: $ENDPOINT_ID"
 
 # Create model registry entry
 echo "◉ Creating model registry entry..."
-MODEL_NAME="crypto-lstm-model"
+MODEL_NAME="stock-lstm-model"
 MODEL_VERSION="v1"
 
 # Upload model to Vertex AI Model Registry
 gcloud ai models upload \
     --display-name=$MODEL_NAME \
-    --container-image-uri="gcr.io/$PROJECT_ID/crypto-lstm-prediction:latest" \
+    --container-image-uri="gcr.io/$PROJECT_ID/stock-lstm-prediction:latest" \
     --region=$REGION \
     --project=$PROJECT_ID
 
@@ -59,7 +59,7 @@ echo "◉ Deploying model to endpoint..."
 gcloud ai endpoints deploy-model \
     $ENDPOINT_ID \
     --model=$MODEL_ID \
-    --display-name="crypto-lstm-deployment" \
+    --display-name="stock-lstm-deployment" \
     --machine-type="n1-standard-2" \
     --min-replica-count=0 \
     --max-replica-count=3 \

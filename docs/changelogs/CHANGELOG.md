@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Crypto ML Trading Dashboard project will be documented in this file.
+All notable changes to the Stock ML Trading Dashboard project will be documented in this file.
 
 ## [Unreleased]
 
@@ -24,40 +24,39 @@ All notable changes to the Crypto ML Trading Dashboard project will be documente
 
 ## [0.2.0] - 2025-10-04
 
-### Added - Portfolio Integration & Staking
-- **Kraken API Authentication**: Full private endpoint support with HMAC-SHA512 signatures
-- **Real Portfolio Integration**: Connect to actual Kraken account and view holdings
-- **Staking Dashboard**: Separate section for staked/bonded assets
-  - Tracks BTC bonded (.B), ETH bonded (.B), SOL futures (.F), DOT futures (.F)
-  - Shows current market value of staked positions
-  - Educational "What is Staking?" section
+### Added - Portfolio Integration & Real-Time Data
+- **Yahoo Finance Integration**: Full stock data support via yfinance (free, no API key needed)
+- **Real Portfolio Integration**: Connect to actual brokerage account and view holdings
+- **Stock Categories Dashboard**: Separate sections for Tech, Sector Leaders, ETFs, Growth stocks
+  - Tracks AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA and more
+  - Shows current market value of all positions
+  - Sector allocation visualization
 - **Enhanced KPI Cards**: Large, colorful cards showing:
-  - Total liquid value
+  - Total portfolio value
   - Total P&L
-  - Staked value (NEW)
+  - Day change (NEW)
   - Total asset count
-- **Manual Refresh**: Button to refresh data from Kraken on demand
-- **Asset Mapping**: Smart detection of Kraken asset suffixes (.B, .F, .S, .M, .L)
+- **Manual Refresh**: Button to refresh data on demand
+- **Stock Universe**: ~30 stocks across Tech, Sector Leaders, ETFs, and Growth categories
 - **Authentication Test Script**: `test_auth.py` to verify API keys
-- **Authenticated API Client**: `data/kraken_auth.py` with secure key handling
+- **Stock Data Client**: `data/stock_api.py` with yfinance integration
 
 ### Changed
-- **Portfolio View**: Now shows real data from Kraken instead of mock data
+- **Portfolio View**: Now shows real data instead of mock data
 - **Improved UI**: Better color coding, larger text, more professional styling
-- **Separated Holdings**: Liquid vs staked assets shown in different tables
+- **Separated Holdings**: Different categories shown in organized tables
 - **Better Error Messages**: More helpful feedback when API calls fail
 
 ### Fixed
 - API static method call issues
 - Portfolio data not displaying correctly
 - KPI readability issues
-- Asset name mapping for Kraken's special formats
+- Asset name mapping for stock ticker formats
 
 ### Security
 - API keys stored in `config/secrets.yaml` (gitignored)
 - Never expose keys in logs or error messages
 - Read-only API permissions documented
-- HMAC signature authentication implemented
 
 ## [0.1.0] - 2025-10-04
 
@@ -67,13 +66,13 @@ All notable changes to the Crypto ML Trading Dashboard project will be documente
   - Live prices view
   - Predictions view (placeholder)
   - Rebalancing view (placeholder)
-- **Kraken API Integration**: Public endpoints for price data
+- **Yahoo Finance Integration**: Real-time stock data via yfinance
 - **Interactive Charts**: Candlestick charts with Plotly
   - Multiple time intervals (1min to 1day)
   - Volume visualization
-- **Live Price Tracking**: Real-time data for 6+ cryptocurrencies
+- **Live Price Tracking**: Real-time data for ~30 stocks
 - **HTML Dashboard**: Standalone alternative with vanilla JavaScript
-- **API Testing Suite**: `kraken_test.py` for connectivity testing
+- **API Testing Suite**: `test_stock_api.py` for connectivity testing
 - **Project Documentation**:
   - Comprehensive README.md
   - project-context.md for architecture
@@ -92,23 +91,23 @@ All notable changes to the Crypto ML Trading Dashboard project will be documente
 
 ## Version History Summary
 
-- **v0.2.0** (Oct 4, 2025): Portfolio Integration & Staking Support
-- **v0.1.0** (Oct 4, 2025): Initial Dashboard & Public API Integration
+- **v0.2.0** (Oct 4, 2025): Portfolio Integration & Stock Data Support
+- **v0.1.0** (Oct 4, 2025): Initial Dashboard & Yahoo Finance Integration
 
 ---
 
 ## Upcoming Features
 
 ### Phase 2 - ML Model (Next)
-- Historical data collection from Kraken
-- LSTM model architecture (2 layers, 50 units)
-- Feature engineering (MA, RSI, volume)
-- Model training and predictions
+- Historical data collection from Yahoo Finance
+- LSTM model architecture (2 layers, 64 units)
+- Feature engineering (25 technical indicators: MAs, RSI, MACD, Bollinger Bands, volume, momentum, volatility, ATR)
+- Model training and 21-day predictions
 - Integration into dashboard
 
 ### Phase 3 - Advanced Features
-- Staking rewards tracking
-- APY calculations
+- Portfolio performance tracking
+- Sector allocation analysis
 - Historical performance charts
 - Trade history analysis
 
@@ -116,11 +115,10 @@ All notable changes to the Crypto ML Trading Dashboard project will be documente
 - Paper trading mode
 - Rebalancing recommendations
 - Risk analysis
-- Trade execution
+- Trade execution (zero-commission)
 
 ### Phase 5 - Cloud Deployment
 - Google Cloud Run deployment
 - BigQuery data storage
 - Vertex AI model training
 - Cloud Scheduler automation
-

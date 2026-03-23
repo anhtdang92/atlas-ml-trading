@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VertexPredictionService:
-    """Vertex AI prediction service for crypto price predictions"""
+    """Vertex AI prediction service for stock price predictions"""
     
     def __init__(self, project_id: str, region: str, endpoint_id: str):
         self.project_id = project_id
@@ -49,7 +49,7 @@ class VertexPredictionService:
         SELECT 
             timestamp,
             open, high, low, close, volume
-        FROM `{self.project_id}.crypto_data.historical_prices`
+        FROM `{self.project_id}.stock_data.historical_prices`
         WHERE symbol = '{symbol}'
         ORDER BY timestamp DESC
         LIMIT {lookback_days}
@@ -281,7 +281,7 @@ class VertexPredictionService:
         
         if bq_data:
             # Insert into BigQuery
-            table_id = f"{self.project_id}.crypto_data.predictions"
+            table_id = f"{self.project_id}.stock_data.predictions"
             self.bq_client.insert_rows_json(table_id, bq_data)
             
             logger.info(f"◊ Logged {len(bq_data)} predictions to BigQuery")

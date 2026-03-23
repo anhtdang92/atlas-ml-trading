@@ -5,9 +5,9 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-DATASET_ID="crypto_data"
+DATASET_ID="stock_data"
 
 echo "◈ Deploying AutoML Time Series Training"
 echo "◊ No TensorFlow needed - Google Cloud handles everything!"
@@ -18,7 +18,7 @@ gcloud config set project $PROJECT_ID
 
 # Create AutoML dataset
 echo "◉ Creating AutoML Time Series dataset..."
-DATASET_NAME="crypto_predictions_$(date +%Y%m%d_%H%M%S)"
+DATASET_NAME="stock_predictions_$(date +%Y%m%d_%H%M%S)"
 
 # Create dataset
 gcloud ai datasets create \
@@ -61,7 +61,7 @@ echo "◊ Data import started: $IMPORT_OPERATION"
 
 # Create training job
 echo "◉ Creating AutoML training job..."
-TRAINING_JOB_NAME="crypto_automl_training_$(date +%Y%m%d_%H%M%S)"
+TRAINING_JOB_NAME="stock_automl_training_$(date +%Y%m%d_%H%M%S)"
 
 gcloud ai models create \
     --region=$REGION \

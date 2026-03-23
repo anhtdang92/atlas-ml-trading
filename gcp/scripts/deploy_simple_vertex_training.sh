@@ -5,9 +5,9 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
 
 echo "◈ Deploying Simple Vertex AI Training"
 echo "◊ Using Google's pre-built containers!"
@@ -21,7 +21,7 @@ echo "◉ Creating Vertex AI training job..."
 
 cat > /tmp/simple_training_job.json << EOF
 {
-  "displayName": "crypto-simple-training-$(date +%Y%m%d-%H%M%S)",
+  "displayName": "stock-simple-training-$(date +%Y%m%d-%H%M%S)",
   "jobSpec": {
     "workerPoolSpecs": [
       {
@@ -45,7 +45,7 @@ from google.cloud import bigquery
 from google.cloud import storage
 import os
 
-print('🚀 Starting simple crypto training...')
+print('🚀 Starting simple stock training...')
 
 # Get project info
 project_id = os.environ['GOOGLE_CLOUD_PROJECT']
@@ -85,12 +85,12 @@ history = model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)
 
 # Save model
 print('💾 Saving model...')
-model_path = '/tmp/crypto_model'
+model_path = '/tmp/stock_model'
 model.save(model_path)
 
 # Upload to Cloud Storage
 bucket = storage_client.bucket(bucket_name)
-blob = bucket.blob('models/simple_crypto_model')
+blob = bucket.blob('models/simple_stock_model')
 blob.upload_from_filename(model_path + '/saved_model.pb')
 
 print('✅ Training complete! Model saved to Cloud Storage.')
@@ -114,7 +114,7 @@ EOF
 echo "◉ Submitting training job..."
 JOB_NAME=$(gcloud ai custom-jobs create \
     --region=$REGION \
-    --display-name="crypto-simple-training-$(date +%Y%m%d-%H%M%S)" \
+    --display-name="stock-simple-training-$(date +%Y%m%d-%H%M%S)" \
     --config=/tmp/simple_training_job.json \
     --format="value(name)")
 

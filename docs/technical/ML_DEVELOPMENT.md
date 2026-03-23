@@ -15,7 +15,7 @@
 - **Win Rate:** > 55%
 
 ### Technical Goals
-1. Fetch 1+ year of historical OHLCV data from Kraken
+1. Fetch 1+ year of historical OHLCV data from Yahoo Finance
 2. Store data in BigQuery for reproducibility
 3. Build 2-layer LSTM neural network
 4. Train model to predict 7-day price movements
@@ -29,7 +29,7 @@
 
 ```
 Data Pipeline:
-Kraken API → historical_data_fetcher.py → BigQuery (crypto_data.historical_prices)
+Yahoo Finance → historical_data_fetcher.py → BigQuery (stock_data.historical_prices)
                                               ↓
 Feature Engineering:
 BigQuery → feature_engineering.py → Features (MA, RSI, Volume, Momentum)
@@ -38,10 +38,10 @@ Model Training:
 Features → lstm_model.py → TensorFlow/Keras → Trained Model
                                                     ↓
 Model Storage:
-Trained Model → Cloud Storage (gs://crypto-ml-models-487/)
+Trained Model → Cloud Storage (gs://stock-ml-models-487/)
                        ↓
 Predictions:
-Model + New Data → predict.py → Predictions → BigQuery (crypto_data.predictions)
+Model + New Data → predict.py → Predictions → BigQuery (stock_data.predictions)
                                                     ↓
 Backtesting:
 Predictions → run_backtest.py (enhanced) → Performance Metrics
@@ -57,16 +57,16 @@ Predictions → Streamlit → User Interface
 ### 1. Historical Data Fetcher ⏳
 **File:** `ml/historical_data_fetcher.py`
 
-**Purpose:** Fetch 365+ days of OHLCV data from Kraken
+**Purpose:** Fetch 365+ days of OHLCV data from Yahoo Finance
 
 **Features:**
-- Fetch data for BTC, ETH, SOL, ADA
+- Fetch data for AAPL, MSFT, GOOGL, AMZN
 - Daily candlestick data (OHLCV)
 - Store in BigQuery with timestamps
 - Handle rate limits and retries
 - Validate data quality
 
-**Output:** BigQuery table `crypto_data.historical_prices`
+**Output:** BigQuery table `stock_data.historical_prices`
 
 ---
 
@@ -150,7 +150,7 @@ Output: Predicted 7-day return (%)
 ### 5. Prediction Generator ⏳
 **File:** `ml/predict.py`
 
-**Purpose:** Generate 7-day predictions for each crypto
+**Purpose:** Generate 7-day predictions for each stock
 
 **Process:**
 1. Load trained model from Cloud Storage
@@ -216,7 +216,7 @@ def calculate_ml_allocation(predictions):
 
 #### 5:00 PM - Data Collection ✅ COMPLETE
 - Built historical_data_fetcher.py (300+ lines, fully documented)
-- Fetched 1 year of data for BTC, ETH, SOL, ADA
+- Fetched 1 year of data for AAPL, MSFT, GOOGL, AMZN
 - **365 days per symbol** (1,460 total records)
 - Data ranges: Oct 2024 - Oct 2025
 - All data validated (no nulls, no negatives, chronological)
@@ -289,7 +289,7 @@ def calculate_ml_allocation(predictions):
 - 50 units: Sweet spot for time series (not too many parameters)
 
 ### Why Dropout 0.2?
-- Prevents overfitting on volatile crypto data
+- Prevents overfitting on volatile stock data
 - 0.2 = industry standard for time series
 - Tested range: 0.1 too little, 0.3 too much
 
@@ -324,8 +324,8 @@ def calculate_ml_allocation(predictions):
 - Cross-validate across assets
 - Start with simpler features
 
-### Challenge 2: Crypto Volatility
-**Problem:** Crypto prices are extremely volatile
+### Challenge 2: Market Volatility
+**Problem:** Stock prices can be volatile
 **Solution:**
 - Predict returns (%), not absolute prices
 - Use dropout for robustness

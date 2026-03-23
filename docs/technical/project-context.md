@@ -1,20 +1,20 @@
-# Project Context: Crypto ML Trading Dashboard
+# Project Context: Stock ML Trading Dashboard
 
-**Last Updated**: October 7, 2025  
-**Project Status**: Production-Ready with Real ML Predictions  
+**Last Updated**: October 7, 2025
+**Project Status**: Production-Ready with Real ML Predictions
 **Current Phase**: Live Google Cloud ML Trading System
 
 ---
 
-## 📋 Project Summary
+## Project Summary
 
-A production-ready cryptocurrency trading system that leverages Google Cloud's Vertex AI for real ML predictions and automatically rebalances portfolios via Kraken API. The system features a Streamlit dashboard with live cloud integration, requiring no local ML dependencies - everything runs in Google Cloud with real-time predictions and cost optimization.
+A production-ready stock trading system that leverages Google Cloud's Vertex AI for real ML predictions and automatically rebalances portfolios using real-time Yahoo Finance data (yfinance). The system features a Streamlit dashboard with live cloud integration, requiring no local ML dependencies - everything runs in Google Cloud with real-time predictions and cost optimization.
 
-**Primary Goal**: Create a profitable, automated crypto trading system while learning ML, cloud deployment, and quantitative finance.
+**Primary Goal**: Create a profitable, automated stock trading system while learning ML, cloud deployment, and quantitative finance.
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### System Components
 
@@ -39,7 +39,7 @@ A production-ready cryptocurrency trading system that leverages Google Cloud's V
 │  Data & API     │ ← External Integration Layer
 │     Layer       │
 ├─────────────────┤
-│ - Kraken API    │
+│ - yfinance API  │
 │ - BigQuery      │
 │ - Cloud Storage │
 └─────────────────┘
@@ -52,29 +52,30 @@ A production-ready cryptocurrency trading system that leverages Google Cloud's V
 - **BigQuery**: Data warehouse with partitioned tables for cost optimization
 - **Cloud Storage**: Model artifacts with lifecycle policies
 - **Cloud Functions**: Automated trading execution
-- **Secret Manager**: Secure API credential storage
+- **Secret Manager**: Secure credential storage
 - **IAM**: Minimal-permission service accounts
 - **Cost Optimization**: Preemptible instances, auto-scaling, lifecycle policies
 
 ---
 
-## 🎯 Core Features & Design Decisions
+## Core Features & Design Decisions
 
 ### 1. Data Collection Strategy
 
-**Decision**: Use Kraken API as primary data source, CoinAPI as backup
+**Decision**: Use Yahoo Finance (yfinance) as primary data source - free, no API key required
 
 **Rationale**:
-- Kraken API is free and provides OHLCV data
-- Direct integration with trading platform ensures data consistency
-- CoinAPI can fill historical gaps if needed
+- yfinance is free and provides comprehensive OHLCV data for stocks
+- No API key or authentication required
+- Covers all major US stocks, ETFs, and indices
+- Reliable historical data for backtesting and training
 
 **Implementation**:
-- Fetch daily OHLCV data for 4-12 cryptocurrencies
+- Fetch daily OHLCV data for ~30 stocks (Tech, Sector Leaders, ETFs, Growth)
 - Store in BigQuery partitioned by date for cost efficiency
 - Run daily Cloud Scheduler job at 1 AM CDT to fetch previous day's data
 
-**Schema** (`crypto_data.historical_prices`):
+**Schema** (`stock_data.historical_prices`):
 ```
 - timestamp: TIMESTAMP (partition key)
 - symbol: STRING
@@ -114,42 +115,44 @@ A production-ready cryptocurrency trading system that leverages Google Cloud's V
 **Decision**: ML-enhanced equal-weight with risk constraints
 
 **Base Strategy**:
-- Start with equal allocation (25% each for 4 coins)
-- Adjust weights based on ML predicted returns
-- Higher predicted return → increase allocation (up to 40%)
-- Lower/negative predicted return → decrease allocation (down to 10%)
+- Start with equal allocation across ~30 stocks
+- Adjust weights based on ML predicted 21-day returns
+- Higher predicted return → increase allocation (up to 15%)
+- Lower/negative predicted return → decrease allocation (down to 2%)
 
 **Risk Controls**:
-- Max position size: 40% per cryptocurrency
-- Min position size: 10% (maintain diversification)
-- Min trade size: $50 (avoid excessive fee drag)
-- Max single trade: $2,000 (reduce slippage risk)
+- Max position size: 15% per stock
+- Min position size: 2% (maintain diversification)
+- Min trade size: $100 (avoid excessive overhead)
+- Confidence threshold: 0.6
 
 **Rebalancing Frequency**:
 - **When**: Every Sunday 10 PM CDT
-- **Why**: Low trading volume = less slippage, pre-week positioning
+- **Why**: Pre-week positioning based on ML predictions
 
 **Fee Consideration**:
-- Kraken fees: ~0.16% maker, ~0.26% taker
-- Only rebalance if expected gain > 2% (covers fees + buffer)
+- Zero-commission trading (most modern brokers)
+- Only rebalance if expected gain justifies portfolio turnover
 
-### 4. Kraken API Integration
+### 4. Yahoo Finance (yfinance) Integration
 
-**Library**: `python-kraken-sdk` v2.3.0+
+**Library**: `yfinance`
 
-**Authentication**:
-- API keys stored in Secret Manager
-- Keys have permissions: Query, Trade (not Withdraw)
-- Rotate keys every 90 days
+**Data Access**:
+- Free, no API key required
+- Supports current prices, historical OHLCV, fundamentals
+- Batch quotes for multiple symbols
+- Stock universe: ~30 stocks (FAANG+, Sector Leaders, ETFs, Growth)
+
+**Stock Universe**:
+- **Tech (FAANG+):** AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
+- **Sector Leaders:** JPM, UNH, XOM, CAT, PG, HD, NEE, AMT, LIN
+- **ETFs:** SPY, QQQ, DIA, IWM, XLK, XLF, XLE, XLV, ARKK
+- **Growth:** PLTR, CRWD, SNOW, SQ, COIN
 
 **Rate Limits**:
-- 15 requests per minute (API tier 2 assumed)
-- Implement exponential backoff on 429 errors
-- Queue orders if multiple symbols need rebalancing
-
-**Order Types**:
-- Use market orders for simplicity and guaranteed execution
-- Future: Implement limit orders for lower fees
+- yfinance is generally permissive but implement respectful request spacing
+- Implement exponential backoff on errors
 
 ### 5. Streamlit Dashboard Design
 
@@ -157,17 +160,21 @@ A production-ready cryptocurrency trading system that leverages Google Cloud's V
 ```python
 # app.py main structure
 def main():
-    st.set_page_config(page_title="Crypto ML Dashboard", layout="wide")
-    
+    st.set_page_config(page_title="ATLAS Stock ML Dashboard", layout="wide")
+
     # Sidebar for navigation
-    page = st.sidebar.selectbox("View", ["Portfolio", "Predictions", "Rebalancing"])
-    
+    page = st.sidebar.selectbox("View", ["Portfolio", "Live Prices", "ML Predictions", "Rebalancing", "Cloud Progress"])
+
     if page == "Portfolio":
         show_portfolio_view()
-    elif page == "Predictions":
+    elif page == "Live Prices":
+        show_live_prices_view()
+    elif page == "ML Predictions":
         show_predictions_view()
     elif page == "Rebalancing":
         show_rebalancing_view()
+    elif page == "Cloud Progress":
+        show_cloud_progress_view()
 ```
 
 **Caching Strategy**:
@@ -176,34 +183,35 @@ def main():
 - Cache portfolio data for 1 minute
 
 **UI/UX Principles**:
+- Cyberpunk-themed with glass morphism and neon effects
 - Mobile-responsive (single column on small screens)
 - Dark mode support
-- Real-time price updates with WebSocket (future)
+- Real-time price updates
 - Export data as CSV for external analysis
 
 ### 6. Local Backtesting Engine
 
-**Purpose**: Validate strategy on real Kraken historical data
+**Purpose**: Validate strategy on real historical stock data
 
 **Backtest Results (90-day baseline)**:
 - Period: July 2025 - October 2025
 - Initial capital: $5,000
 - Final value: $6,450.76
 - **Total Return: +29.02%**
-- **Sharpe Ratio: 3.35** ✅
-- **Max Drawdown: 5.82%** ✅
+- **Sharpe Ratio: 3.35**
+- **Max Drawdown: 5.82%**
 - Total Trades: 23
 - Rebalances: 13 (weekly)
-- Fees: $19.25 (0.38%)
+- Fees: $0 (zero-commission)
 
 **Key Metrics**:
 - Equal-weight baseline established
 - All risk metrics exceeded targets
-- Low volatility despite crypto market
-- Realistic Kraken fees included (0.16% maker, 0.26% taker)
+- Low volatility with diversified stock portfolio
+- Zero-commission trading assumed
 
 **Implementation** (`run_backtest.py`):
-1. Fetch historical data from Kraken API
+1. Fetch historical data from yfinance
 2. Simulate weekly rebalancing
 3. Track portfolio value and trades
 4. Calculate performance metrics
@@ -218,10 +226,10 @@ Sunday 10 PM CDT → Cloud Scheduler triggers Cloud Function
 Cloud Function steps:
 1. Fetch latest data from BigQuery
 2. Load trained models from Cloud Storage
-3. Generate predictions for each symbol
+3. Generate 21-day predictions for each symbol
 4. Calculate target portfolio weights
 5. Determine buy/sell orders
-6. Execute trades via Kraken API (if confidence > threshold)
+6. Execute trades via brokerage API (if confidence > threshold)
 7. Log trades to BigQuery
 8. Send notification email/Slack
 ```
@@ -234,18 +242,18 @@ Cloud Function steps:
 
 ---
 
-## ☁️ Cloud-First ML Infrastructure (PRODUCTION READY)
+## Cloud-First ML Infrastructure (PRODUCTION READY)
 
 ### Key Innovation: No Local ML Dependencies
 
 **Revolutionary Approach**: This project proves that you don't need TensorFlow, PyTorch, or any heavy ML libraries installed locally. Everything runs in Google Cloud using pre-built containers.
 
 **Benefits**:
-- ✅ **Zero local setup** - No dependency hell
-- ✅ **Cost efficient** - Pay only for what you use
-- ✅ **Always up-to-date** - Google maintains the containers
-- ✅ **Scalable** - Automatic scaling based on demand
-- ✅ **Professional grade** - Enterprise ML infrastructure
+- **Zero local setup** - No dependency hell
+- **Cost efficient** - Pay only for what you use
+- **Always up-to-date** - Google maintains the containers
+- **Scalable** - Automatic scaling based on demand
+- **Professional grade** - Enterprise ML infrastructure
 
 ### Vertex AI Integration
 
@@ -266,7 +274,7 @@ Cloud Function steps:
 ### BigQuery Data Warehouse
 
 **Schema**: 6 partitioned tables for comprehensive data management
-- `historical_prices`: OHLCV data from Kraken API
+- `historical_prices`: OHLCV data from yfinance
 - `predictions`: ML model predictions with confidence scores
 - `trades`: Complete trading history and execution logs
 - `model_metrics`: Training performance and validation metrics
@@ -276,9 +284,9 @@ Cloud Function steps:
 ### Cloud Storage Architecture
 
 **Buckets**:
-- `crypto-ml-trading-487-models`: Model artifacts (1-year retention)
-- `crypto-ml-trading-487-training-data`: Training data (30-day retention)
-- `crypto-ml-trading-487-backups`: System backups (90-day retention)
+- `stock-ml-trading-487-models`: Model artifacts (1-year retention)
+- `stock-ml-trading-487-training-data`: Training data (30-day retention)
+- `stock-ml-trading-487-backups`: System backups (90-day retention)
 
 **Lifecycle Policies**: Automatic cost optimization through data archiving and deletion
 
@@ -287,7 +295,7 @@ Cloud Function steps:
 **Service Accounts**:
 - `ml-training-sa`: Vertex AI training jobs (minimal permissions)
 - `ml-prediction-sa`: Vertex AI predictions (read-only access)
-- `crypto-app-sa`: Streamlit app access (BigQuery read, Storage read, Secret Manager)
+- `stock-app-sa`: Streamlit app access (BigQuery read, Storage read, Secret Manager)
 
 **Security Features**:
 - Least-privilege IAM roles
@@ -308,7 +316,7 @@ Cloud Function steps:
 
 ---
 
-## 🔧 Technical Decisions Log
+## Technical Decisions Log
 
 ### Python Version: 3.9+
 - **Why**: TensorFlow 2.x requires 3.9+, GCP Cloud Run supports it
@@ -330,23 +338,22 @@ Cloud Function steps:
 
 ### Custom Backtesting vs. QuantConnect
 - **Chosen**: Custom Python engine
-- **Why**: Full control, integrates with our stack, uses real Kraken data, free
+- **Why**: Full control, integrates with our stack, uses real stock data, free
 - **Trade-off**: Less features than pro platform, but we built exactly what we need
 - **Benefit**: Production-ready code, no external dependencies
 
-### Market Orders vs. Limit Orders
-- **Chosen**: Market orders (for now)
-- **Why**: Guaranteed execution, simpler implementation
-- **Trade-off**: Higher fees, but acceptable for weekly rebalancing
-- **Future**: Add limit orders to reduce costs
+### Zero-Commission Trading
+- **Chosen**: Modern broker with zero commissions
+- **Why**: Eliminates fee drag on rebalancing, simplifies position sizing
+- **Benefit**: More frequent rebalancing without cost penalty
 
 ---
 
-## 📊 Data Flow Diagrams
+## Data Flow Diagrams
 
 ### Training Pipeline
 ```
-Kraken API → BigQuery → Vertex AI Training Job → Cloud Storage (model)
+yfinance → BigQuery → Vertex AI Training Job → Cloud Storage (model)
                           ↓
                     BigQuery (metrics log)
 ```
@@ -360,20 +367,19 @@ Cloud Storage (model) → Prediction Script → BigQuery (predictions table)
 
 ### Trading Pipeline
 ```
-BigQuery (predictions) → Rebalancer → Kraken API (orders)
+BigQuery (predictions) → Rebalancer → Brokerage API (orders)
             ↑                             ↓
     BigQuery (portfolio)          BigQuery (trade log)
 ```
 
 ---
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Unit Tests
-- `tests/test_data_fetcher.py`: Mock Kraken API responses
+- `tests/unit/test_stock_api.py`: Test yfinance data fetching
 - `tests/test_lstm.py`: Test model training and prediction functions
 - `tests/test_rebalancer.py`: Test portfolio calculations (critical!)
-- `tests/test_kraken_client.py`: Mock API calls
 
 ### Integration Tests
 - End-to-end paper trading simulation
@@ -390,16 +396,16 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 🚀 Deployment Strategy
+## Deployment Strategy
 
 ### Development Environment
 - Local Streamlit for rapid iteration
 - Local Python virtual environment
-- Mock Kraken API responses
+- Mock data responses for offline development
 
 ### Staging Environment (Paper Trading)
 - Deploy to Cloud Run with `--paper-trading` flag
-- Use separate BigQuery dataset (`crypto_staging`)
+- Use separate BigQuery dataset (`stock_staging`)
 - Monitor for 2 weeks before live deployment
 
 ### Production Environment
@@ -410,7 +416,7 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 💰 Cost Estimates
+## Cost Estimates
 
 **Target**: Run for 3-4 months on $50 GCP credit
 
@@ -421,7 +427,7 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 - Vertex AI: $10 (weekly training runs)
 - Cloud Scheduler: $0 (within free tier)
 - Cloud Functions: $0 (within free tier)
-- **Total**: ~$16/month → $50 covers ~3 months ✓
+- **Total**: ~$16/month → $50 covers ~3 months
 
 ### Cost Optimization Tips
 - Use preemptible instances for Vertex AI training
@@ -431,18 +437,18 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 🔐 Security Considerations
+## Security Considerations
 
 ### API Keys
 - **Storage**: Google Secret Manager
 - **Access**: Cloud Function service account only
 - **Rotation**: Every 90 days
-- **Permissions**: Query + Trade (no Withdraw)
+- **Permissions**: Minimal required access
 
 ### Database
 - Use parameterized queries exclusively
 - No user input directly in SQL
-- Encrypt sensitive data (API keys) at rest
+- Encrypt sensitive data at rest
 
 ### Application
 - No sensitive data in logs
@@ -451,14 +457,15 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 📚 Learning Resources Used
+## Learning Resources Used
 
 ### Machine Learning
 - [TensorFlow Time Series Tutorial](https://www.tensorflow.org/tutorials/structured_data/time_series)
 - [LSTM for Stock Prediction (Medium)](https://medium.com/tag/lstm-stock-prediction)
 
 ### Trading & Data
-- [Kraken API Docs](https://docs.kraken.com/rest/)
+- [yfinance Documentation](https://github.com/ranaroussi/yfinance)
+- [Yahoo Finance API](https://finance.yahoo.com/)
 
 ### Cloud
 - [GCP Cloud Run Quickstart](https://cloud.google.com/run/docs/quickstarts)
@@ -466,25 +473,21 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 🐛 Known Issues & TODOs
+## Known Issues & TODOs
 
 ### Current Issues
 - [ ] None critical - Phase 1 working smoothly!
 
 ### Completed Recently
-- [x] Kraken API authentication
-- [x] Real portfolio integration
-- [x] Staking/bonded assets tracking
+- [x] yfinance data integration
+- [x] Real portfolio tracking
 - [x] Improved KPI visualization
 - [x] Manual refresh functionality
-- [x] Separated liquid vs staked holdings
 - [x] Custom backtesting engine
 - [x] Baseline strategy validated (29% return)
 
 ### Future Enhancements
-- [ ] Historical staking rewards tracking
-- [ ] Staking APY calculations
-- [ ] Add more technical indicators (MACD, Bollinger Bands)
+- [ ] Add more technical indicators (beyond current 25)
 - [ ] Implement sentiment analysis from Twitter/Reddit
 - [ ] Multi-model ensemble (LSTM + XGBoost)
 - [ ] WebSocket real-time price updates
@@ -495,14 +498,13 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 📝 Developer Notes
+## Developer Notes
 
 **Developer Background**:
 - 4 years SQL experience (T-SQL, Oracle)
 - Strong Power BI/data visualization skills
 - Python proficiency (data analysis, ML coursework from Georgia Tech)
 - New to GCP but familiar with cloud concepts
-- Located in Spring, TX (Kraken supports US trading)
 
 **Project Goals**:
 1. **Learning**: Gain hands-on experience with ML deployment, cloud infrastructure, and algorithmic trading
@@ -515,17 +517,17 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 📅 Development Timeline
+## Development Timeline
 
 ### Phase 1: Data Pipeline (Weeks 1-2)
 - Set up GCP project and billing
-- Implement Kraken API data fetcher
+- Implement yfinance data fetcher
 - Create BigQuery tables and schemas
 - Test daily data collection
 
 ### Phase 2: ML Foundation (Weeks 3-4)
 - Build LSTM model architecture
-- Implement feature engineering
+- Implement feature engineering (25 technical indicators)
 - Train initial models locally
 - Evaluate model performance
 
@@ -545,8 +547,8 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 - Test extensively with paper trading
 
 ### Phase 6: Extended Backtesting (Week 10)
-- ✅ Built custom Python backtesting engine
-- ✅ Established baseline: 29% return, 3.35 Sharpe
+- Built custom Python backtesting engine
+- Established baseline: 29% return, 3.35 Sharpe
 - [ ] Extend to 1+ year historical data
 - [ ] Test ML predictions vs baseline
 
@@ -564,21 +566,21 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 🎓 Lessons Learned
+## Lessons Learned
 
 ### Phase 1 & Portfolio Integration:
 
 **Technical Learnings:**
-1. **Kraken API Authentication**: HMAC-SHA512 signature generation is tricky but well documented
-2. **Staking Assets**: Kraken uses suffixes (.B, .F, .S) to indicate bonded/futures positions
+1. **yfinance Integration**: Simple and reliable data source, no authentication complexity
+2. **Stock Data Handling**: Need to handle market hours, splits, dividends properly
 3. **Streamlit Caching**: `@st.cache_data` is crucial for performance with API calls
-4. **Asset Mapping**: Need to handle Kraken's naming (XXBT vs XBT vs BT.B all = BTC)
+4. **Symbol Standardization**: Stock symbols are straightforward compared to crypto exchanges
 
 **UI/UX Learnings:**
 1. **Large KPIs Work Better**: Users prefer big, colorful cards over small metrics
-2. **Separation is Clarity**: Showing liquid vs staked separately reduces confusion
+2. **Separation is Clarity**: Showing different asset categories separately reduces confusion
 3. **Manual Refresh**: Users want control over when data updates (vs auto-refresh)
-4. **Progressive Disclosure**: Expandable sections for details (like "What is Staking?") work well
+4. **Progressive Disclosure**: Expandable sections for details work well
 
 **Security Learnings:**
 1. **Never Commit Secrets**: .gitignore is critical - always check before commits
@@ -592,7 +594,7 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 
 ---
 
-## 📞 Questions to Resolve
+## Questions to Resolve
 
 - [ ] Should we use daily or hourly data for training? (Daily chosen for now)
 - [ ] What confidence threshold for auto-executing trades? (TBD after backtesting)
@@ -601,4 +603,3 @@ BigQuery (predictions) → Rebalancer → Kraken API (orders)
 ---
 
 **This document should be updated after each major milestone or architectural decision.**
-

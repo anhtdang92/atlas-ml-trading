@@ -2,7 +2,7 @@
 
 ## ✅ Integration Status: COMPLETE
 
-The Vertex AI endpoint has been successfully integrated with your crypto ML trading system! Here's what was accomplished:
+The Vertex AI endpoint has been successfully integrated with your stock ML trading system! Here's what was accomplished:
 
 ## 🔧 What Was Integrated
 
@@ -47,7 +47,7 @@ The Vertex AI endpoint has been successfully integrated with your crypto ML trad
          │                       │
          ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐
-│   Kraken API    │    │   Mock Data      │
+│   Yahoo Finance    │    │   Mock Data      │
 │   (Live Prices) │    │   (Fallback)     │
 └─────────────────┘    └──────────────────┘
 ```
@@ -85,7 +85,7 @@ The Vertex AI endpoint has been successfully integrated with your crypto ML trad
 
 ### 3. **Data Flow**
 - **Primary**: Vertex AI endpoint → BigQuery → Predictions
-- **Fallback**: Kraken API → Mock predictions
+- **Fallback**: Yahoo Finance → Mock predictions
 - **Storage**: All predictions logged to BigQuery
 - **Caching**: Predictions cached for performance
 
@@ -118,7 +118,7 @@ The Vertex AI endpoint has been successfully integrated with your crypto ML trad
 ### Configuration Files
 - Environment variables configured for Vertex AI
 - Endpoint ID: `1074806701011501056`
-- Project: `crypto-ml-trading-487`
+- Project: `stock-ml-trading-487`
 - Region: `us-central1`
 
 ## 🎉 Success Metrics
@@ -144,6 +144,6 @@ The Vertex AI endpoint has been successfully integrated with your crypto ML trad
 
 ---
 
-## 🎯 **Your crypto ML trading system is now fully integrated with Google Cloud Vertex AI!**
+## 🎯 **Your stock ML trading system is now fully integrated with Google Cloud Vertex AI!**
 
 The system is ready for testing and can be easily extended with real historical data and trained models as they become available.

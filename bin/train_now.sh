@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 🚀 Quick ML Training Launcher
-# Train crypto price prediction models on Google Cloud
+# Train stock price prediction models on Google Cloud
 
 set -e
 

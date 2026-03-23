@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-DATASET_ID="crypto_data"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+DATASET_ID="stock_data"
 SYMBOLS="BTC,ETH,SOL,ADA"
 
 echo "◈ Deploying BUDGET-OPTIMIZED Vertex AI training job..."
@@ -40,7 +40,7 @@ RUN pip install --no-cache-dir \\
     pandas \\
     numpy \\
     scikit-learn \\
-    python-kraken-sdk==1.6.2 \\
+    yfinance==0.2.46 \\
     requests \\
     python-dotenv
 
@@ -60,16 +60,16 @@ EOF
 
 # Build optimized Docker image
 echo "◉ Building optimized Docker image..."
-docker build -t gcr.io/$PROJECT_ID/crypto-lstm-training-budget:latest -f gcp/training/Dockerfile.budget .
+docker build -t gcr.io/$PROJECT_ID/stock-lstm-training-budget:latest -f gcp/training/Dockerfile.budget .
 
 echo "◉ Pushing Docker image to Container Registry..."
-docker push gcr.io/$PROJECT_ID/crypto-lstm-training-budget:latest
+docker push gcr.io/$PROJECT_ID/stock-lstm-training-budget:latest
 
 # Create cost-optimized training job configuration
 echo "◉ Creating budget-optimized training job..."
 cat > /tmp/budget_training_job_config.json << EOF
 {
-  "displayName": "crypto-lstm-training-budget-$(date +%Y%m%d-%H%M%S)",
+  "displayName": "stock-lstm-training-budget-$(date +%Y%m%d-%H%M%S)",
   "jobSpec": {
     "workerPoolSpecs": [
       {
@@ -81,7 +81,7 @@ cat > /tmp/budget_training_job_config.json << EOF
         "replicaCount": 1,
         "preemptible": true,
         "containerSpec": {
-          "imageUri": "gcr.io/$PROJECT_ID/crypto-lstm-training-budget:latest",
+          "imageUri": "gcr.io/$PROJECT_ID/stock-lstm-training-budget:latest",
           "command": ["python"],
           "args": [
             "gcp/training/vertex_training_job.py",

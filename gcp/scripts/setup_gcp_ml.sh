@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-DATASET_ID="crypto_data"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+DATASET_ID="stock_data"
 
 echo "◈ Setting up GCP ML infrastructure for project: $PROJECT_ID"
 echo "◊ This will enable Vertex AI, BigQuery, Cloud Storage, and IAM"
@@ -78,7 +78,7 @@ STORAGE_BUCKET=$BUCKET_NAME
 VERTEX_ENDPOINT_ID=
 
 # Service Account Keys
-GOOGLE_APPLICATION_CREDENTIALS=config/keys/crypto-app-sa-key.json
+GOOGLE_APPLICATION_CREDENTIALS=config/keys/stock-app-sa-key.json
 EOF
 
 echo "◊ Created .env file with GCP configuration"

@@ -11,10 +11,10 @@
 - **Google Cloud ML Training**: ✅ **COMPLETED**
 - **Job Status**: `JOB_STATE_SUCCEEDED`
 - **Training Time**: ~5 minutes (first-time setup)
-- **Model Ready**: Real LSTM model trained on crypto data
+- **Model Ready**: Real LSTM model trained on stock data
 
 ### ✅ **Infrastructure Ready**
-- **GCP Project**: crypto-ml-trading-487
+- **GCP Project**: stock-ml-trading-487
 - **Vertex AI**: Active and configured
 - **BigQuery**: Data warehouse operational
 - **Cloud Storage**: Model artifacts stored
@@ -55,7 +55,7 @@
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Your Local    │    │   Google Cloud  │    │   Kraken API    │
+│   Your Local    │    │   Google Cloud  │    │   Yahoo Finance    │
 │   Streamlit App │◄──►│   Vertex AI     │◄──►│   (Trading)     │
 │   (Real ML UI)  │    │   (Real ML)     │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -99,7 +99,7 @@
 ### **Long Term (Next Month):**
 1. **Live Trading** - Real money execution
 2. **Portfolio Rebalancing** - Automated trades
-3. **Advanced Features** - More cryptocurrencies
+3. **Advanced Features** - More stocks
 4. **Scaling** - Multiple models, timeframes
 
 ---
@@ -109,7 +109,7 @@
 ### **Model Information:**
 - **Architecture**: 2-layer LSTM with 50 units each
 - **Features**: OHLCV + technical indicators (MA, RSI, volume)
-- **Training Data**: Historical crypto data from Kraken
+- **Training Data**: Historical stock data from Yahoo Finance
 - **Prediction Horizon**: 1-30 days
 - **Confidence Scoring**: Model uncertainty quantification
 
@@ -152,4 +152,4 @@
 
 **🎯 Status: PRODUCTION READY WITH REAL ML PREDICTIONS!**
 
-Your cloud-first crypto ML trading system is now fully operational with real Google Cloud predictions! 🚀
+Your cloud-first stock ML trading system is now fully operational with real Google Cloud predictions! 🚀
