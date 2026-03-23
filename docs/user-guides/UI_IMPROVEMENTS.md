@@ -1,4 +1,4 @@
-# ⚡ NOVA UI TRANSFORMATION - CYBERPUNK EDITION
+# ATLAS UI TRANSFORMATION - CYBERPUNK EDITION
 
 ## What's New
 
@@ -30,7 +30,7 @@ Your Streamlit app has been **completely transformed into a futuristic cyberpunk
 - 💫 **Animated**: Smooth transitions and hover effects
 
 **Icon Examples:**
-- `ph-lightning` - NOVA logo
+- `ph-lightning` - ATLAS logo
 - `ph-wallet` - Portfolio
 - `ph-chart-line` - Live prices
 - `ph-brain` - ML predictions
@@ -87,7 +87,7 @@ Your Streamlit app has been **completely transformed into a futuristic cyberpunk
 - Military-style uppercase labels
 
 #### Live Prices
-- Neon price cards with crypto icons
+- Neon price cards with stock icons
 - Color-coded change badges
 - Glowing border on hover
 - Grid layout for metrics
@@ -100,7 +100,7 @@ Your Streamlit app has been **completely transformed into a futuristic cyberpunk
 
 #### Headers
 - **Scan line animation** across page
-- **NOVA** with spaced letters and glow
+- **ATLAS** with spaced letters and glow
 - **Status pulse** indicator (green dot)
 - **Military time** display
 
@@ -222,8 +222,8 @@ Hover: Neon border + lifted shadow
 
 ### Header
 - ✅ Scan line animation
-- ✅ "N O V A" with letter spacing & glow
-- ✅ "CRYPTO INTELLIGENCE SYSTEM" subtitle
+- ✅ "A T L A S" with letter spacing & glow
+- ✅ "STOCK ML INTELLIGENCE SYSTEM" subtitle
 - ✅ Green pulse "ONLINE" indicator
 - ✅ Military time (HH:MM:SS)
 
@@ -235,7 +235,7 @@ Hover: Neon border + lifted shadow
 
 ### Sidebar
 - ✅ Lightning icon in gradient circle
-- ✅ "NOVA" title with gradient
+- ✅ "ATLAS" title with gradient
 - ✅ Active page with cyan→purple gradient
 - ✅ Neon status indicators
 - ✅ Glowing progress bars
@@ -248,7 +248,7 @@ Hover: Neon border + lifted shadow
 
 ## 🎉 Result
 
-**Your crypto dashboard is now a futuristic command center!**
+**Your stock trading dashboard is now a futuristic command center!**
 
 - 🌌 Dark cyberpunk aesthetic
 - ⚡ Neon glows everywhere
@@ -266,4 +266,4 @@ Hover: Neon border + lifted shadow
 
 ## 🛸 Enjoy Your Cyberpunk Console!
 
-The NOVA Crypto Intelligence System is ready for the future! 🚀⚡
+The ATLAS Stock ML Intelligence System is ready for the future! 🚀⚡

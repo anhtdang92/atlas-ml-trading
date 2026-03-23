@@ -79,7 +79,7 @@ def get_endpoint_info(project_id: str, region: str, endpoint_id: str):
 
 def main():
     parser = argparse.ArgumentParser(description='Test Vertex AI Endpoint')
-    parser.add_argument('--project_id', default='crypto-ml-trading-487', help='GCP Project ID')
+    parser.add_argument('--project_id', default='stock-ml-trading-487', help='GCP Project ID')
     parser.add_argument('--region', default='us-central1', help='GCP Region')
     parser.add_argument('--endpoint_id', required=True, help='Vertex AI Endpoint ID')
     parser.add_argument('--info_only', action='store_true', help='Only show endpoint info')

@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 """
 Simplified Vertex AI Training Job
-This script creates a working LSTM model for crypto predictions
+This script creates a working LSTM model for stock price predictions
 """
 
 import os

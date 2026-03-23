@@ -1,6 +1,6 @@
 # Core Dependencies
-python-kraken-sdk==2.3.0
-streamlit>=1.28.0
+yfinance==0.2.46
+streamlit==1.41.1
 pandas>=2.0.0
 numpy>=1.24.0
 

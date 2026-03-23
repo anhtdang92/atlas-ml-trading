@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 ENDPOINT_ID="1074806701011501056"
 
@@ -40,7 +40,7 @@ echo "🏗️ Creating simple prediction model..."
 cat > simple_model.py << 'EOF'
 #!/usr/bin/env python3
 """
-Simple prediction model for crypto prices
+Simple prediction model for stock prices
 This is a basic model for testing the endpoint deployment
 """
 
@@ -51,11 +51,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class SimpleCryptoModel:
-    """Simple crypto price prediction model"""
+class SimpleStockModel:
+    """Simple stock price prediction model"""
     
     def __init__(self):
-        self.model_name = "simple-crypto-model-v1"
+        self.model_name = "simple-stock-model-v1"
         self.supported_symbols = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']
         
     def predict(self, symbol: str, lookback_data: List[List[float]]) -> Dict:
@@ -63,7 +63,7 @@ class SimpleCryptoModel:
         Make a simple prediction based on recent price trends
         
         Args:
-            symbol: Crypto symbol
+            symbol: Stock symbol
             lookback_data: List of [open, high, low, close, volume] for last 7 days
             
         Returns:
@@ -138,7 +138,7 @@ class SimpleCryptoModel:
             'status': 'mock'
         }
 
-def predict_crypto_prices(data: Dict) -> List[Dict]:
+def predict_stock_prices(data: Dict) -> List[Dict]:
     """
     Main prediction function for Vertex AI endpoint
     
@@ -148,7 +148,7 @@ def predict_crypto_prices(data: Dict) -> List[Dict]:
     Returns:
         List of predictions
     """
-    model = SimpleCryptoModel()
+    model = SimpleStockModel()
     predictions = []
     
     # Extract data
@@ -164,7 +164,7 @@ def predict_crypto_prices(data: Dict) -> List[Dict]:
 
 if __name__ == "__main__":
     # Test the model
-    model = SimpleCryptoModel()
+    model = SimpleStockModel()
     
     # Create test data
     test_data = {
@@ -191,9 +191,9 @@ if __name__ == "__main__":
         }
     }
     
-    predictions = predict_crypto_prices(test_data)
+    predictions = predict_stock_prices(test_data)
     
-    print("🧪 Testing Simple Crypto Model:")
+    print("🧪 Testing Simple Stock Model:")
     for pred in predictions:
         print(f"   {pred['symbol']}: ${pred['current_price']:,.2f} → ${pred['predicted_price']:,.2f} ({pred['predicted_return']*100:+.2f}%)")
         print(f"      Confidence: {pred['confidence']*100:.1f}%")
@@ -234,10 +234,10 @@ EOF
 
 # Build and push container
 echo "🔨 Building container..."
-docker build -t gcr.io/$PROJECT_ID/simple-crypto-model:latest -f Dockerfile.simple .
+docker build -t gcr.io/$PROJECT_ID/simple-stock-model:latest -f Dockerfile.simple .
 
 echo "📤 Pushing container to registry..."
-docker push gcr.io/$PROJECT_ID/simple-crypto-model:latest
+docker push gcr.io/$PROJECT_ID/simple-stock-model:latest
 
 # Deploy model to endpoint
 echo ""
@@ -246,7 +246,7 @@ echo "🚀 Deploying model to endpoint..."
 # Create deployment configuration
 cat > deployment_config.json << EOF
 {
-  "displayName": "simple-crypto-model-deployment",
+  "displayName": "simple-stock-model-deployment",
   "dedicatedResources": {
     "machineSpec": {
       "machineType": "e2-standard-2"
@@ -255,7 +255,7 @@ cat > deployment_config.json << EOF
     "maxReplicaCount": 2
   },
   "containerSpec": {
-    "imageUri": "gcr.io/$PROJECT_ID/simple-crypto-model:latest",
+    "imageUri": "gcr.io/$PROJECT_ID/simple-stock-model:latest",
     "command": ["python"],
     "args": ["simple_model.py"],
     "env": [
@@ -300,8 +300,8 @@ echo ""
 echo "🎉 Simple Model Deployment Complete!"
 echo ""
 echo "📊 Deployment Summary:"
-echo "   ✅ Model: Simple crypto prediction model"
-echo "   ✅ Container: gcr.io/$PROJECT_ID/simple-crypto-model:latest"
+echo "   ✅ Model: Simple stock prediction model"
+echo "   ✅ Container: gcr.io/$PROJECT_ID/simple-stock-model:latest"
 echo "   ✅ Endpoint: $ENDPOINT_ID"
 echo "   ✅ Machine Type: e2-standard-2 (cost-effective)"
 echo "   ✅ Auto-scaling: 0-2 replicas"

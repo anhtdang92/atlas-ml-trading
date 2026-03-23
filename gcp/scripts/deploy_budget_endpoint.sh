@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-ENDPOINT_NAME="crypto-ml-predictions-budget"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+ENDPOINT_NAME="stock-ml-predictions-budget"
 
 echo "◈ Deploying BUDGET-OPTIMIZED Vertex AI prediction endpoint..."
 echo "◊ Auto-scaling with scale-to-zero for cost optimization"
@@ -61,10 +61,10 @@ WORKDIR /app
 COPY gcp/deployment/model_serving.py .
 
 # Create model directory
-RUN mkdir -p /models/crypto-lstm
+RUN mkdir -p /models/stock-lstm
 
 # Set environment variables
-ENV MODEL_NAME=crypto-lstm
+ENV MODEL_NAME=stock-lstm
 ENV MODEL_BASE_PATH=/models
 
 # Expose port
@@ -74,8 +74,8 @@ EXPOSE 8500 8501
 CMD ["tensorflow_model_server", \\
      "--port=8500", \\
      "--rest_api_port=8501", \\
-     "--model_name=crypto-lstm", \\
-     "--model_base_path=/models/crypto-lstm"]
+     "--model_name=stock-lstm", \\
+     "--model_base_path=/models/stock-lstm"]
 EOF
 
 # Create model serving script
@@ -156,10 +156,10 @@ EOF
 
 # Build serving container
 echo "◉ Building serving container..."
-docker build -t gcr.io/$PROJECT_ID/crypto-lstm-serving-budget:latest -f gcp/deployment/Dockerfile.serving .
+docker build -t gcr.io/$PROJECT_ID/stock-lstm-serving-budget:latest -f gcp/deployment/Dockerfile.serving .
 
 echo "◉ Pushing serving container..."
-docker push gcr.io/$PROJECT_ID/crypto-lstm-serving-budget:latest
+docker push gcr.io/$PROJECT_ID/stock-lstm-serving-budget:latest
 
 # Create endpoint
 echo "◉ Creating Vertex AI endpoint..."
@@ -167,7 +167,7 @@ ENDPOINT_ID=$(gcloud ai endpoints create \
     --display-name="$ENDPOINT_NAME" \
     --region=$REGION \
     --format="value(name)" \
-    --description="Budget-optimized crypto ML prediction endpoint")
+    --description="Budget-optimized stock ML prediction endpoint")
 
 echo "◊ Endpoint created: $ENDPOINT_ID"
 
@@ -175,7 +175,7 @@ echo "◊ Endpoint created: $ENDPOINT_ID"
 echo "◉ Deploying model to endpoint..."
 cat > /tmp/budget_deployment_config.json << EOF
 {
-  "displayName": "crypto-lstm-deployment-budget",
+  "displayName": "stock-lstm-deployment-budget",
   "dedicatedResources": {
     "machineSpec": {
       "machineType": "e2-standard-2"
@@ -190,7 +190,7 @@ cat > /tmp/budget_deployment_config.json << EOF
     ]
   },
   "containerSpec": {
-    "imageUri": "gcr.io/$PROJECT_ID/crypto-lstm-serving-budget:latest",
+    "imageUri": "gcr.io/$PROJECT_ID/stock-lstm-serving-budget:latest",
     "command": ["python"],
     "args": ["model_serving.py"],
     "env": [

@@ -5,8 +5,8 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
-DATASET_ID="crypto_data"
+PROJECT_ID="stock-ml-trading-487"
+DATASET_ID="stock_data"
 
 echo "◈ Setting up BigQuery for project: $PROJECT_ID"
 
@@ -70,7 +70,7 @@ echo "◉ Setting dataset permissions..."
 
 # Grant access to service accounts
 bq update --source_format=NEWLINE_DELIMITED_JSON \
-    --schema="[{\"role\":\"WRITER\",\"userByEmail\":\"ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com\"},{\"role\":\"READER\",\"userByEmail\":\"ml-prediction-sa@$PROJECT_ID.iam.gserviceaccount.com\"},{\"role\":\"READER\",\"userByEmail\":\"crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com\"}]" \
+    --schema="[{\"role\":\"WRITER\",\"userByEmail\":\"ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com\"},{\"role\":\"READER\",\"userByEmail\":\"ml-prediction-sa@$PROJECT_ID.iam.gserviceaccount.com\"},{\"role\":\"READER\",\"userByEmail\":\"stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com\"}]" \
     $PROJECT_ID:$DATASET_ID
 
 # Create views for common queries

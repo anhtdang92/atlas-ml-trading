@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 
 echo "◈ Setting up IAM for project: $PROJECT_ID"
@@ -27,8 +27,8 @@ gcloud iam service-accounts create ml-prediction-sa \
 
 # Create service account for app
 echo "◉ Creating app service account..."
-gcloud iam service-accounts create crypto-app-sa \
-    --display-name="Crypto App Service Account" \
+gcloud iam service-accounts create stock-app-sa \
+    --display-name="Stock App Service Account" \
     --description="Service account for the Streamlit app"
 
 # Grant roles to ML training service account
@@ -58,19 +58,19 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 # Grant roles to app service account
 echo "◉ Granting roles to app service account..."
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/bigquery.dataViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/storage.objectViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/aiplatform.user"
 
 # Create and download service account keys
@@ -83,8 +83,8 @@ gcloud iam service-accounts keys create ../config/keys/ml-training-sa-key.json \
 gcloud iam service-accounts keys create ../config/keys/ml-prediction-sa-key.json \
     --iam-account=ml-prediction-sa@$PROJECT_ID.iam.gserviceaccount.com
 
-gcloud iam service-accounts keys create ../config/keys/crypto-app-sa-key.json \
-    --iam-account=crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com
+gcloud iam service-accounts keys create ../config/keys/stock-app-sa-key.json \
+    --iam-account=stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com
 
 echo "◈ IAM setup complete!"
 echo "◊ Service account keys saved to config/keys/"

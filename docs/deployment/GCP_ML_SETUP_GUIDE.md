@@ -1,6 +1,6 @@
 # Google Cloud ML Setup Guide - $50 Budget Optimized
 
-This guide will help you set up Google Cloud Platform ML infrastructure for your crypto trading system within a $50 budget.
+This guide will help you set up Google Cloud Platform ML infrastructure for your stock ML trading system within a $50 budget.
 
 ## 🎯 Budget Target
 - **Total Budget**: $50 GCP credit
@@ -26,7 +26,7 @@ This guide will help you set up Google Cloud Platform ML infrastructure for your
 gcloud auth login
 
 # Set your project
-gcloud config set project crypto-ml-trading-487
+gcloud config set project stock-ml-trading-487
 ```
 
 ## 🚀 Quick Setup (One Command)
@@ -159,7 +159,7 @@ gcloud ai endpoints describe ENDPOINT_ID --region=us-central1
 gcloud billing accounts list
 
 # Check BigQuery usage
-bq query --use_legacy_sql=false "SELECT * FROM \`crypto-ml-trading-487.crypto_data.__TABLES__\`"
+bq query --use_legacy_sql=false "SELECT * FROM \`stock-ml-trading-487.stock_data.__TABLES__\`"
 ```
 
 ## 🧪 Testing the Setup
@@ -257,7 +257,7 @@ gcloud auth list
 gcloud iam service-accounts list
 
 # Check storage
-gsutil ls gs://crypto-ml-models-crypto-ml-trading-487-models/
+gsutil ls gs://stock-ml-trading-487-models/
 ```
 
 ## 📈 Performance Optimization

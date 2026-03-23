@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-DATASET_ID="crypto_data"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+DATASET_ID="stock_data"
 SYMBOLS="BTC,ETH,SOL,ADA"
 
 echo "◈ Deploying Vertex AI training job..."
@@ -18,10 +18,10 @@ gcloud config set project $PROJECT_ID
 
 # Build and push Docker image
 echo "◉ Building Docker image..."
-docker build -t gcr.io/$PROJECT_ID/crypto-lstm-training:latest -f gcp/training/Dockerfile .
+docker build -t gcr.io/$PROJECT_ID/stock-lstm-training:latest -f gcp/training/Dockerfile .
 
 echo "◉ Pushing Docker image to Container Registry..."
-docker push gcr.io/$PROJECT_ID/crypto-lstm-training:latest
+docker push gcr.io/$PROJECT_ID/stock-lstm-training:latest
 
 # Create training job
 echo "◉ Creating Vertex AI training job..."
@@ -29,7 +29,7 @@ echo "◉ Creating Vertex AI training job..."
 # Create training job configuration
 cat > /tmp/training_job_config.json << EOF
 {
-  "displayName": "crypto-lstm-training-$(date +%Y%m%d-%H%M%S)",
+  "displayName": "stock-lstm-training-$(date +%Y%m%d-%H%M%S)",
   "jobSpec": {
     "workerPoolSpecs": [
       {
@@ -40,7 +40,7 @@ cat > /tmp/training_job_config.json << EOF
         },
         "replicaCount": 1,
         "containerSpec": {
-          "imageUri": "gcr.io/$PROJECT_ID/crypto-lstm-training:latest",
+          "imageUri": "gcr.io/$PROJECT_ID/stock-lstm-training:latest",
           "command": ["python"],
           "args": [
             "gcp/training/vertex_training_job.py",
@@ -63,7 +63,7 @@ cat > /tmp/training_job_config.json << EOF
     ]
   },
   "encryptionSpec": {
-    "kmsKeyName": "projects/$PROJECT_ID/locations/$REGION/keyRings/crypto-ml-keyring/cryptoKeys/crypto-ml-key"
+    "kmsKeyName": "projects/$PROJECT_ID/locations/$REGION/keyRings/stock-ml-keyring/cryptoKeys/stock-ml-key"
   }
 }
 EOF

@@ -1,60 +1,95 @@
-# 🚀 Train Crypto Price Prediction Models on Google Cloud
+# Train Stock Price Prediction Models on Google Cloud
 
 ## Quick Start - Train Models Now!
 
-You have everything set up! Here's how to train ML models for crypto price prediction using your Google Cloud credits:
+You have everything set up! Here's how to train ML models for stock price prediction using your Google Cloud credits:
 
 ### Option 1: Quick Training (Recommended for Testing)
 ```bash
-# Train models for major cryptos (BTC, ETH, SOL, ADA)
+# Train models for major stocks (AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA)
 bash scripts/deployment/deploy_budget_training.sh
 ```
 
-**Cost:** $3-8 per training run  
-**Time:** 30-60 minutes  
-**What it trains:** LSTM models for 4 cryptocurrencies
+**Cost:** $3-8 per training run
+**Time:** 30-60 minutes
+**What it trains:** LSTM models for ~30 stocks
 
-### Option 2: Full Training (All Supported Cryptos)
+### Option 2: Full Training (All Supported Stocks)
 ```bash
-# Train models for all 6 cryptos including DOT and XRP
+# Train models for all ~30 stocks including sector leaders, ETFs, and growth stocks
 bash scripts/deployment/deploy_vertex_training.sh
 ```
 
-**Cost:** $8-15 per training run  
-**Time:** 1-2 hours  
-**What it trains:** LSTM models for 6 cryptocurrencies
+**Cost:** $8-15 per training run
+**Time:** 1-2 hours
+**What it trains:** LSTM models for ~30 stocks across all categories
 
 ---
 
-## 📊 What Gets Trained
+## What Gets Trained
 
 ### Model Architecture
 - **Type:** LSTM (Long Short-Term Memory) Neural Network
-- **Layers:** 2-layer LSTM with 50 units each
-- **Features:** 11 technical indicators
+- **Layers:** 2-layer LSTM with 64 units each
+- **Dropout:** 0.2 for regularization
+- **Features:** 25 technical indicators
   - Moving averages (7, 14, 30-day)
   - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Bollinger Bands
   - Volume indicators
   - Price momentum
   - Volatility measures
+  - ATR (Average True Range)
 
 ### Training Data
-- **Source:** Kraken API (real historical data)
+- **Source:** Yahoo Finance via yfinance (free, no API key needed)
 - **Duration:** 365 days of OHLCV data
-- **Prediction Target:** 7-day future price returns
+- **Prediction Target:** 21-day future price returns (position trading)
 - **Validation:** 80/20 train/test split with early stopping
 
-### Cryptocurrencies Supported
-1. **BTC** (Bitcoin)
-2. **ETH** (Ethereum)
-3. **SOL** (Solana)
-4. **ADA** (Cardano)
-5. **DOT** (Polkadot)
-6. **XRP** (Ripple)
+### Stock Universe (~30 Stocks)
+**Tech (FAANG+):**
+1. **AAPL** (Apple)
+2. **MSFT** (Microsoft)
+3. **GOOGL** (Alphabet)
+4. **AMZN** (Amazon)
+5. **NVDA** (NVIDIA)
+6. **META** (Meta Platforms)
+7. **TSLA** (Tesla)
+
+**Sector Leaders:**
+8. **JPM** (JPMorgan Chase)
+9. **UNH** (UnitedHealth)
+10. **XOM** (ExxonMobil)
+11. **CAT** (Caterpillar)
+12. **PG** (Procter & Gamble)
+13. **HD** (Home Depot)
+14. **NEE** (NextEra Energy)
+15. **AMT** (American Tower)
+16. **LIN** (Linde)
+
+**ETFs:**
+17. **SPY** (S&P 500)
+18. **QQQ** (Nasdaq 100)
+19. **DIA** (Dow Jones)
+20. **IWM** (Russell 2000)
+21. **XLK** (Tech Sector)
+22. **XLF** (Financial Sector)
+23. **XLE** (Energy Sector)
+24. **XLV** (Healthcare Sector)
+25. **ARKK** (ARK Innovation)
+
+**Growth:**
+26. **PLTR** (Palantir)
+27. **CRWD** (CrowdStrike)
+28. **SNOW** (Snowflake)
+29. **SQ** (Block)
+30. **COIN** (Coinbase)
 
 ---
 
-## 💰 Cost Breakdown
+## Cost Breakdown
 
 ### Budget-Optimized Training (Recommended)
 ```
@@ -78,14 +113,14 @@ Credits used: ~30-50% of $50 budget
 
 ---
 
-## 🎯 Step-by-Step Training Guide
+## Step-by-Step Training Guide
 
 ### Step 1: Verify Setup
 ```bash
 # Check your GCP project
 gcloud config get-value project
 
-# Should show: crypto-ml-trading-487
+# Should show: stock-ml-trading-487
 
 # Check if you're authenticated
 gcloud auth list
@@ -98,10 +133,10 @@ bash scripts/deployment/enable_apis.sh
 ```
 
 This enables:
-- ✅ Vertex AI API
-- ✅ Container Registry API
-- ✅ Cloud Storage API
-- ✅ BigQuery API
+- Vertex AI API
+- Container Registry API
+- Cloud Storage API
+- BigQuery API
 
 ### Step 3: Set Up Storage (One-time setup)
 ```bash
@@ -141,7 +176,7 @@ python gcp/deployment/test_endpoint.py
 
 ---
 
-## 📈 Training Progress Tracking
+## Training Progress Tracking
 
 ### Check Training Status
 ```bash
@@ -154,29 +189,29 @@ gcloud ai custom-jobs describe JOB_NAME --region=us-central1
 
 ### View Training Metrics
 Your Streamlit dashboard shows training progress in real-time!
-- Go to **☁️ Cloud Progress** tab
+- Go to **Cloud Progress** tab
 - See live training status
 - View cost tracking
 - Monitor job completion
 
 ---
 
-## 🔥 Advanced: Custom Training Configuration
+## Advanced: Custom Training Configuration
 
-### Train Specific Cryptocurrencies
+### Train Specific Stocks
 Create a custom training script:
 
 ```bash
 # Edit the symbols you want to train
-export SYMBOLS="BTC,ETH,SOL"  # Only train these 3
+export SYMBOLS="AAPL,MSFT,GOOGL"  # Only train these 3
 
 # Run custom training
 gcloud ai custom-jobs create \
   --region=us-central1 \
-  --display-name="custom-crypto-training" \
+  --display-name="custom-stock-training" \
   --worker-pool-spec=machine-type=e2-standard-4,replica-count=1,\
 accelerator-type=NVIDIA_TESLA_T4,accelerator-count=1,\
-container-image-uri=gcr.io/crypto-ml-trading-487/crypto-lstm-training:latest
+container-image-uri=gcr.io/stock-ml-trading-487/stock-lstm-training:latest
 ```
 
 ### Adjust Training Parameters
@@ -185,29 +220,29 @@ Edit `scripts/deployment/deploy_budget_training.sh`:
 
 ```bash
 # Line 93-96: Adjust these parameters
---lookback_days=7      # Days of history to look at (default: 7)
---prediction_horizon=7  # Days ahead to predict (default: 7)
+--lookback_days=30      # Days of history to look at (default: 30)
+--prediction_horizon=21  # Days ahead to predict (default: 21)
 --epochs=50            # Training epochs (more = better but slower)
 --batch_size=32        # Batch size (32 is optimal for T4 GPU)
 ```
 
 **Recommendations:**
-- `lookback_days=7`: Good for short-term predictions
-- `lookback_days=14`: Better for medium-term
+- `lookback_days=30`: Good for position trading predictions
+- `lookback_days=14`: Better for shorter-term swing trades
 - `epochs=50-100`: Balance between quality and cost
 - `batch_size=32`: Optimal for T4 GPU
 
 ---
 
-## 🎓 What Happens During Training
+## What Happens During Training
 
 ### Phase 1: Data Collection (5-10 min)
-- Fetches 365 days of OHLCV data from Kraken
-- Downloads for all specified cryptocurrencies
+- Fetches 365 days of OHLCV data from Yahoo Finance via yfinance
+- Downloads for all specified stocks
 - Validates data quality
 
 ### Phase 2: Feature Engineering (5-10 min)
-- Calculates 11 technical indicators
+- Calculates 25 technical indicators
 - Normalizes data
 - Creates time series sequences
 - Splits into train/validation sets
@@ -227,7 +262,7 @@ Edit `scripts/deployment/deploy_budget_training.sh`:
 
 ---
 
-## 📦 After Training - Deploy & Use
+## After Training - Deploy & Use
 
 ### 1. Deploy to Endpoint
 ```bash
@@ -241,7 +276,7 @@ This creates a prediction endpoint with:
 
 ### 2. Use in Your Dashboard
 Your Streamlit app automatically uses deployed models!
-- Go to **◉ ML Predictions** tab
+- Go to **ML Predictions** tab
 - Select "Vertex AI" mode
 - Get real ML predictions
 
@@ -250,30 +285,30 @@ Your Streamlit app automatically uses deployed models!
 from google.cloud import aiplatform
 
 # Initialize client
-aiplatform.init(project="crypto-ml-trading-487", location="us-central1")
+aiplatform.init(project="stock-ml-trading-487", location="us-central1")
 
 # Get endpoint
 endpoint = aiplatform.Endpoint.list()[0]
 
 # Make prediction
 prediction = endpoint.predict(instances=[{
-    "symbol": "BTC",
-    "lookback_days": 7
+    "symbol": "AAPL",
+    "lookback_days": 30
 }])
 
-print(f"BTC 7-day prediction: {prediction.predictions[0]}")
+print(f"AAPL 21-day prediction: {prediction.predictions[0]}")
 ```
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### Cost Optimization
-1. ✅ **Use preemptible instances** (60-80% savings)
-2. ✅ **Train during off-peak hours** (slightly cheaper)
-3. ✅ **Batch train multiple models** in one job
-4. ✅ **Use budget alerts** to avoid overspending
-5. ✅ **Delete old endpoints** when not needed
+1. **Use preemptible instances** (60-80% savings)
+2. **Train during off-peak hours** (slightly cheaper)
+3. **Batch train multiple models** in one job
+4. **Use budget alerts** to avoid overspending
+5. **Delete old endpoints** when not needed
 
 ### Training Schedule
 ```bash
@@ -291,12 +326,12 @@ print(f"BTC 7-day prediction: {prediction.predictions[0]}")
 
 ---
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Error: "Quota exceeded"
 ```bash
 # Check quotas
-gcloud compute project-info describe --project=crypto-ml-trading-487
+gcloud compute project-info describe --project=stock-ml-trading-487
 
 # Request quota increase:
 # https://console.cloud.google.com/iam-admin/quotas
@@ -323,13 +358,13 @@ Reduce batch size:
 
 ---
 
-## 📊 Monitoring Costs
+## Monitoring Costs
 
 ### Check Current Spend
 ```bash
 # Via gcloud
 gcloud billing accounts list
-gcloud billing projects describe crypto-ml-trading-487
+gcloud billing projects describe stock-ml-trading-487
 
 # Or visit:
 # https://console.cloud.google.com/billing
@@ -344,25 +379,25 @@ Already configured at $50 limit with alerts at:
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
 ### After First Training
-1. ✅ Check training succeeded in Cloud Progress tab
-2. ✅ Deploy model to endpoint
-3. ✅ Test predictions in ML Predictions tab
-4. ✅ Compare with enhanced mock predictions
-5. ✅ Set up weekly retraining
+1. Check training succeeded in Cloud Progress tab
+2. Deploy model to endpoint
+3. Test predictions in ML Predictions tab
+4. Compare with enhanced mock predictions
+5. Set up weekly retraining
 
 ### Optimize Your Models
 1. **Experiment with hyperparameters**
    - Try different lookback periods
-   - Adjust LSTM units (50, 100, 128)
+   - Adjust LSTM units (64, 100, 128)
    - Test different learning rates
 
 2. **Add more features**
    - Market sentiment data
    - News indicators
-   - On-chain metrics
+   - Sector correlation metrics
 
 3. **Ensemble models**
    - Combine multiple models
@@ -371,15 +406,15 @@ Already configured at $50 limit with alerts at:
 
 ---
 
-## 📚 Resources
+## Resources
 
 - **Vertex AI Docs:** https://cloud.google.com/vertex-ai/docs
 - **Pricing Calculator:** https://cloud.google.com/products/calculator
-- **Your Project Console:** https://console.cloud.google.com/home/dashboard?project=crypto-ml-trading-487
+- **Your Project Console:** https://console.cloud.google.com/home/dashboard?project=stock-ml-trading-487
 
 ---
 
-## ✅ Ready to Train!
+## Ready to Train!
 
 You're all set! Run this command to start training:
 
@@ -387,9 +422,8 @@ You're all set! Run this command to start training:
 bash scripts/deployment/deploy_budget_training.sh
 ```
 
-Then watch the progress in your **☁️ Cloud Progress** dashboard tab!
+Then watch the progress in your **Cloud Progress** dashboard tab!
 
-**Estimated cost:** $3-8 per run  
-**Time:** 30-60 minutes  
-**Result:** 4 trained LSTM models ready for predictions! 🚀
-
+**Estimated cost:** $3-8 per run
+**Time:** 30-60 minutes
+**Result:** Trained LSTM models for ~30 stocks ready for 21-day predictions!

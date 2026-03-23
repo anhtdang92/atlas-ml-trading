@@ -1,26 +1,26 @@
 # Technical Architecture Documentation
-## Crypto ML Trading Dashboard
+## ATLAS - Stock ML Intelligence System
 
-**Date:** October 8, 2025  
-**Version:** 1.0  
-**System Status:** Production Ready ✅
+**Date:** October 8, 2025
+**Version:** 2.0
+**System Status:** Production Ready
 
 ---
 
-## 🏗️ **System Overview**
+## **System Overview**
 
-The Crypto ML Trading Dashboard is a comprehensive Streamlit application that provides cryptocurrency price predictions, portfolio rebalancing, and real-time market data analysis. The system integrates multiple prediction services with intelligent fallback mechanisms.
+The ATLAS Stock ML Intelligence System is a comprehensive Streamlit application that provides stock price predictions, portfolio rebalancing, and real-time market data analysis. The system integrates multiple prediction services with intelligent fallback mechanisms.
 
 ### **Core Components:**
 - **Frontend:** Streamlit web application
 - **Prediction Engine:** Hybrid prediction system with multiple providers
-- **Data Layer:** Kraken API, BigQuery, Cloud Storage
+- **Data Layer:** Yahoo Finance (yfinance), BigQuery, Cloud Storage
 - **ML Infrastructure:** Vertex AI, TensorFlow, Local models
 - **Trading Logic:** Portfolio rebalancing with risk controls
 
 ---
 
-## 📊 **Architecture Diagram**
+## **Architecture Diagram**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -40,13 +40,13 @@ The Crypto ML Trading Dashboard is a comprehensive Streamlit application that pr
 ┌─────────────────────────────────────────────────────────────────┐
 │                      DATA LAYER                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  Kraken API  │  BigQuery  │  Cloud Storage  │  Local Models    │
+│  Yahoo Finance  │  BigQuery  │  Cloud Storage  │  Local Models  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔧 **Component Details**
+## **Component Details**
 
 ### **1. Frontend Layer (Streamlit)**
 
@@ -115,22 +115,32 @@ class HybridPredictionService:
 
 **Configuration:**
 ```python
-SUPPORTED_SYMBOLS = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']
-BASE_ALLOCATION = 1.0 / len(SUPPORTED_SYMBOLS)  # Equal weight
-MAX_POSITION_WEIGHT = 0.40  # Max 40% per position
-MIN_POSITION_WEIGHT = 0.10  # Min 10% per position
-ML_WEIGHT_FACTOR = 0.3     # ML influence on allocation
+SUPPORTED_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
+                     'JPM', 'UNH', 'XOM', 'CAT', 'PG', 'HD', 'NEE', 'AMT', 'LIN',
+                     'SPY', 'QQQ', 'DIA', 'IWM', 'XLK', 'XLF', 'XLE', 'XLV', 'ARKK',
+                     'PLTR', 'CRWD', 'SNOW', 'SQ', 'COIN']
+MAX_POSITION_WEIGHT = 0.15  # Max 15% per position
+MIN_POSITION_WEIGHT = 0.02  # Min 2% per position
+ML_WEIGHT_FACTOR = 0.3      # ML influence on allocation
 ```
 
 ### **4. Data Integration**
 
-#### **Kraken API** (`data/kraken_api.py`)
-**Purpose:** Real-time cryptocurrency data
+#### **Stock API** (`data/stock_api.py`)
+**Purpose:** Real-time stock market data via Yahoo Finance (yfinance)
 
-**Endpoints Used:**
-- `/0/public/Ticker` - Current prices
-- `/0/public/OHLC` - Historical data
-- `/0/public/AssetPairs` - Trading pairs
+**Features:**
+- Current prices and quotes
+- Batch quotes for multiple symbols
+- Historical OHLCV data
+- Fundamentals data
+- No API key required (free)
+
+**Stock Universe (~30 stocks):**
+- Tech (FAANG+): AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
+- Sector Leaders: JPM, UNH, XOM, CAT, PG, HD, NEE, AMT, LIN
+- ETFs: SPY, QQQ, DIA, IWM, XLK, XLF, XLE, XLV, ARKK
+- Growth: PLTR, CRWD, SNOW, SQ, COIN
 
 #### **BigQuery Integration**
 **Purpose:** Historical data storage and analysis
@@ -145,10 +155,10 @@ ML_WEIGHT_FACTOR = 0.3     # ML influence on allocation
 
 **Structure:**
 ```
-gs://crypto-ml-models/
+gs://stock-ml-models/
 ├── models/
-│   ├── BTC_model.h5
-│   ├── ETH_model.h5
+│   ├── AAPL_model.h5
+│   ├── MSFT_model.h5
 │   └── ...
 └── config/
     ├── training_config.json
@@ -157,7 +167,7 @@ gs://crypto-ml-models/
 
 ---
 
-## 🔄 **Data Flow Architecture**
+## **Data Flow Architecture**
 
 ### **Prediction Flow:**
 ```
@@ -178,15 +188,15 @@ Portfolio State → ML Predictions → Allocation Calculation → Risk Controls 
 
 ### **Data Pipeline:**
 ```
-Kraken API → Data Validation → BigQuery → Feature Engineering → ML Training → Model Deployment
+Yahoo Finance → Data Validation → BigQuery → Feature Engineering → ML Training → Model Deployment
      │              │              │              │               │              │
-  Real-time       Price/Volume    Historical     Technical      LSTM Model    Vertex AI
-  Prices          Validation      Storage        Indicators     Training      Endpoint
+  Real-time       Price/Volume    Historical     25 Technical    LSTM Model    Vertex AI
+  Prices          Validation      Storage        Indicators      Training      Endpoint
 ```
 
 ---
 
-## 🛠️ **Technical Implementation**
+## **Technical Implementation**
 
 ### **Error Handling Strategy**
 
@@ -218,12 +228,12 @@ else:
 #### **Prediction Format:**
 ```python
 {
-    'symbol': 'BTC',
-    'current_price': 45000.0,
-    'predicted_price': 46500.0,
-    'predicted_return': 0.0333,  # 3.33%
+    'symbol': 'AAPL',
+    'current_price': 178.50,
+    'predicted_price': 185.20,
+    'predicted_return': 0.0375,  # 3.75%
     'confidence': 0.75,
-    'days_ahead': 7,
+    'days_ahead': 21,
     'prediction_source': 'enhanced_mock',  # or 'vertex_ai_ml', 'local_ml'
     'timestamp': '2025-10-08T22:30:00Z'
 }
@@ -232,12 +242,12 @@ else:
 #### **Allocation Format:**
 ```python
 {
-    'BTC': 0.1667,  # 16.67% allocation
-    'ETH': 0.1667,
-    'SOL': 0.1667,
-    'ADA': 0.1667,
-    'DOT': 0.1667,
-    'XRP': 0.1667
+    'AAPL': 0.05,
+    'MSFT': 0.05,
+    'GOOGL': 0.04,
+    'AMZN': 0.04,
+    'NVDA': 0.05,
+    # ... ~30 stocks with varying weights
 }
 ```
 
@@ -255,7 +265,7 @@ else:
 
 ---
 
-## 🔐 **Security & Configuration**
+## **Security & Configuration**
 
 ### **Secrets Management:**
 ```
@@ -263,29 +273,27 @@ config/
 ├── secrets.yaml (gitignored)
 ├── secrets.yaml.example
 └── keys/
-    ├── crypto-app-sa-key.json
+    ├── stock-app-sa-key.json
     ├── ml-prediction-sa-key.json
     └── ml-training-sa-key.json
 ```
 
 ### **Environment Variables:**
 ```bash
-GOOGLE_CLOUD_PROJECT=crypto-ml-trading-487
+GOOGLE_CLOUD_PROJECT=stock-ml-trading-487
 GCP_REGION=us-central1
 VERTEX_ENDPOINT_ID=1074806701011501056
-KRAKEN_API_KEY=your_api_key
-KRAKEN_SECRET=your_secret
 ```
 
 ### **Access Controls:**
 - Service account authentication for GCP
-- API key management for Kraken
+- No API keys needed for Yahoo Finance (free data)
 - Paper trading mode by default
 - Confirmation dialogs for live trading
 
 ---
 
-## 📈 **Monitoring & Logging**
+## **Monitoring & Logging**
 
 ### **Logging Strategy:**
 ```python
@@ -293,13 +301,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Prediction operations
-logger.info("◊ Generating prediction for BTC")
-logger.warning("⚠️ Vertex AI failed for BTC, falling back")
-logger.error("❌ Prediction failed for BTC: {error}")
+logger.info("Generating prediction for AAPL")
+logger.warning("Vertex AI failed for AAPL, falling back")
+logger.error("Prediction failed for AAPL: {error}")
 
 # System status
-logger.info("🔀 Hybrid Prediction Service initialized")
-logger.info("✅ Generated 6 predictions")
+logger.info("Hybrid Prediction Service initialized")
+logger.info("Generated predictions for 30 symbols")
 ```
 
 ### **Health Checks:**
@@ -316,7 +324,7 @@ logger.info("✅ Generated 6 predictions")
 
 ---
 
-## 🚀 **Deployment Architecture**
+## **Deployment Architecture**
 
 ### **Local Development:**
 ```bash
@@ -335,7 +343,7 @@ streamlit run app.py
 ```bash
 # GCP setup
 gcloud auth login
-gcloud config set project crypto-ml-trading-487
+gcloud config set project stock-ml-trading-487
 
 # Enable APIs
 gcloud services enable aiplatform.googleapis.com
@@ -361,12 +369,12 @@ CMD ["streamlit", "run", "app.py"]
 
 ---
 
-## 🔧 **Configuration Management**
+## **Configuration Management**
 
 ### **Application Config** (`config/config.yaml`):
 ```yaml
 app:
-  title: "Crypto ML Trading Dashboard"
+  title: "ATLAS - Stock ML Intelligence System"
   theme: "dark"
   layout: "wide"
 
@@ -377,28 +385,29 @@ prediction:
 
 trading:
   paper_mode: true
-  supported_symbols: ["BTC", "ETH", "SOL", "ADA", "DOT", "XRP"]
-  max_position_weight: 0.40
-  min_position_weight: 0.10
+  max_position_weight: 0.15
+  min_position_weight: 0.02
 ```
 
 ### **Rebalancing Config** (`config/rebalancing_config.json`):
 ```json
 {
-  "base_allocation": 0.1667,
   "ml_weight_factor": 0.3,
   "confidence_threshold": 0.6,
   "rebalancing_threshold": 0.05,
-  "trading_fee": 0.0016
+  "trading_fee": 0.0,
+  "min_trade_size": 100,
+  "max_position_weight": 0.15,
+  "min_position_weight": 0.02
 }
 ```
 
 ---
 
-## 📊 **Performance Metrics**
+## **Performance Metrics**
 
 ### **Current Benchmarks:**
-- **Prediction Generation:** 2-3 seconds for 6 symbols
+- **Prediction Generation:** 3-5 seconds for ~30 symbols
 - **Page Load Time:** <2 seconds
 - **Data Refresh Rate:** 30 seconds
 - **Memory Usage:** ~500MB
@@ -412,7 +421,7 @@ trading:
 
 ---
 
-## 🔄 **Backup & Recovery**
+## **Backup & Recovery**
 
 ### **Data Backup:**
 - BigQuery automatic backups
@@ -428,12 +437,12 @@ trading:
 
 ---
 
-## 📝 **Maintenance Procedures**
+## **Maintenance Procedures**
 
 ### **Daily Tasks:**
 - Monitor system health
 - Check prediction accuracy
-- Verify API connectivity
+- Verify Yahoo Finance connectivity
 - Review error logs
 
 ### **Weekly Tasks:**
@@ -450,4 +459,4 @@ trading:
 
 ---
 
-*Technical Architecture Documentation - Last Updated: October 8, 2025*
+*Technical Architecture Documentation - ATLAS Stock ML Intelligence System*

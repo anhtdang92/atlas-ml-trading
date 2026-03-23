@@ -5,10 +5,10 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
-DATASET_ID="crypto_data"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
+DATASET_ID="stock_data"
 
 echo "◈ Setting up BUDGET-OPTIMIZED GCP ML infrastructure"
 echo "◊ Target: $50 credit for 3-4 months (~$15/month)"
@@ -97,9 +97,9 @@ gcloud services enable secretmanager.googleapis.com
 
 # Create service accounts with minimal permissions
 echo "◉ Creating service accounts..."
-gcloud iam service-accounts create crypto-app-sa \
-    --display-name="Crypto App Service Account" \
-    --description="Service account for crypto ML app"
+gcloud iam service-accounts create stock-app-sa \
+    --display-name="Stock App Service Account" \
+    --description="Service account for stock ML app"
 
 gcloud iam service-accounts create ml-training-sa \
     --display-name="ML Training Service Account" \
@@ -112,17 +112,17 @@ gcloud iam service-accounts create ml-prediction-sa \
 # Assign minimal IAM roles
 echo "◉ Assigning IAM roles..."
 
-# Crypto app SA - read-only access
+# Stock app SA - read-only access
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/bigquery.dataViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/storage.objectViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
 
 # ML training SA - training permissions
@@ -152,8 +152,8 @@ mkdir -p config/keys
 
 # Create service account keys
 echo "◉ Creating service account keys..."
-gcloud iam service-accounts keys create config/keys/crypto-app-sa-key.json \
-    --iam-account=crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com
+gcloud iam service-accounts keys create config/keys/stock-app-sa-key.json \
+    --iam-account=stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com
 
 gcloud iam service-accounts keys create config/keys/ml-training-sa-key.json \
     --iam-account=ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com
@@ -232,7 +232,7 @@ echo "◉ Creating BigQuery tables..."
 bq mk --table \
     --time_partitioning_type=DAY \
     --time_partitioning_field=timestamp \
-    --description="Historical cryptocurrency prices" \
+    --description="Historical stock prices" \
     $PROJECT_ID:$DATASET_ID.historical_prices \
     timestamp:TIMESTAMP,symbol:STRING,open:FLOAT64,high:FLOAT64,low:FLOAT64,close:FLOAT64,volume:FLOAT64,data_source:STRING,created_at:TIMESTAMP
 
@@ -284,7 +284,7 @@ STORAGE_BUCKET_TRAINING=$BUCKET_NAME-training-data
 VERTEX_ENDPOINT_ID=
 
 # Service Account Keys
-GOOGLE_APPLICATION_CREDENTIALS=config/keys/crypto-app-sa-key.json
+GOOGLE_APPLICATION_CREDENTIALS=config/keys/stock-app-sa-key.json
 ML_TRAINING_SA_KEY=config/keys/ml-training-sa-key.json
 ML_PREDICTION_SA_KEY=config/keys/ml-prediction-sa-key.json
 

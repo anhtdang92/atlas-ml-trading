@@ -15,10 +15,10 @@
 - **Win Rate:** > 55%
 
 ### Technical Goals
-1. Fetch 1+ year of historical OHLCV data from Kraken
+1. Fetch 1+ year of historical OHLCV data from Yahoo Finance
 2. Store data in BigQuery for reproducibility
 3. Build 2-layer LSTM neural network
-4. Train model to predict 7-day price movements
+4. Train model to predict 21-day price movements
 5. Generate predictions with confidence scores
 6. Integrate predictions into backtesting engine
 7. Validate ML improves performance
@@ -29,19 +29,19 @@
 
 ```
 Data Pipeline:
-Kraken API → historical_data_fetcher.py → BigQuery (crypto_data.historical_prices)
+Yahoo Finance → historical_data_fetcher.py → BigQuery (stock_data.historical_prices)
                                               ↓
 Feature Engineering:
-BigQuery → feature_engineering.py → Features (MA, RSI, Volume, Momentum)
+BigQuery → feature_engineering.py → Features (25 indicators: MAs, RSI, MACD, Bollinger Bands, volume, momentum, volatility, ATR)
                                         ↓
 Model Training:
 Features → lstm_model.py → TensorFlow/Keras → Trained Model
                                                     ↓
 Model Storage:
-Trained Model → Cloud Storage (gs://crypto-ml-models-487/)
+Trained Model → Cloud Storage (gs://stock-ml-models-487/)
                        ↓
 Predictions:
-Model + New Data → predict.py → Predictions → BigQuery (crypto_data.predictions)
+Model + New Data → predict.py → Predictions → BigQuery (stock_data.predictions)
                                                     ↓
 Backtesting:
 Predictions → run_backtest.py (enhanced) → Performance Metrics
@@ -57,37 +57,42 @@ Predictions → Streamlit → User Interface
 ### 1. Historical Data Fetcher ⏳
 **File:** `ml/historical_data_fetcher.py`
 
-**Purpose:** Fetch 365+ days of OHLCV data from Kraken
+**Purpose:** Fetch 365+ days of OHLCV data from Yahoo Finance
 
 **Features:**
-- Fetch data for BTC, ETH, SOL, ADA
+- Fetch data for ~30 stocks (AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA + sector leaders + ETFs + growth)
 - Daily candlestick data (OHLCV)
 - Store in BigQuery with timestamps
 - Handle rate limits and retries
 - Validate data quality
+- No API key required (yfinance is free)
 
-**Output:** BigQuery table `crypto_data.historical_prices`
+**Output:** BigQuery table `stock_data.historical_prices`
 
 ---
 
 ### 2. Feature Engineering Pipeline ⏳
 **File:** `ml/feature_engineering.py`
 
-**Purpose:** Create technical indicators for ML model
+**Purpose:** Create 25 technical indicators for ML model
 
 **Features to Calculate:**
-- **Moving Averages:** 7-day, 14-day, 30-day
+- **Moving Averages:** 7-day, 14-day, 30-day, 50-day, 200-day
 - **RSI (Relative Strength Index):** 14-day period
-- **Volume Indicators:** 
+- **MACD:** Signal line and histogram
+- **Bollinger Bands:** Upper, lower, bandwidth
+- **Volume Indicators:**
   - Volume moving average (7-day)
   - Volume rate of change
 - **Price Momentum:**
   - Daily returns
   - 7-day momentum
+  - 21-day momentum
 - **Volatility:**
   - Standard deviation (7-day rolling)
+  - ATR (Average True Range)
 
-**Output:** Feature matrix ready for LSTM
+**Output:** Feature matrix ready for LSTM (25 features)
 
 ---
 
@@ -97,20 +102,20 @@ Predictions → Streamlit → User Interface
 **Architecture:**
 ```python
 Model: Sequential
-├── LSTM Layer 1: 50 units, return_sequences=True
+├── LSTM Layer 1: 64 units, return_sequences=True
 │   └── Dropout: 0.2
-├── LSTM Layer 2: 50 units, return_sequences=False
+├── LSTM Layer 2: 64 units, return_sequences=False
 │   └── Dropout: 0.2
-├── Dense Layer: 25 units, activation='relu'
+├── Dense Layer: 32 units, activation='relu'
 └── Output Layer: 1 unit (predicted return)
 
-Input: (7 days × N features)
-Output: Predicted 7-day return (%)
+Input: (30 days × 25 features)
+Output: Predicted 21-day return (%)
 ```
 
 **Hyperparameters:**
-- Lookback window: 7 days
-- Prediction horizon: 7 days
+- Lookback window: 30 days
+- Prediction horizon: 21 days (position trading)
 - Batch size: 32
 - Epochs: 100
 - Optimizer: Adam (lr=0.001)
@@ -137,8 +142,8 @@ Output: Predicted 7-day return (%)
 
 **Training Process:**
 1. Load historical data from BigQuery
-2. Engineer features
-3. Create sequences (7-day windows)
+2. Engineer 25 features
+3. Create sequences (30-day windows)
 4. Split train/validation sets
 5. Train LSTM model
 6. Evaluate on validation set
@@ -150,12 +155,12 @@ Output: Predicted 7-day return (%)
 ### 5. Prediction Generator ⏳
 **File:** `ml/predict.py`
 
-**Purpose:** Generate 7-day predictions for each crypto
+**Purpose:** Generate 21-day predictions for each stock
 
 **Process:**
 1. Load trained model from Cloud Storage
-2. Fetch latest 7 days of data
-3. Calculate features
+2. Fetch latest 30 days of data
+3. Calculate 25 features
 4. Generate prediction
 5. Calculate confidence score
 6. Store in BigQuery
@@ -163,12 +168,12 @@ Output: Predicted 7-day return (%)
 **Output Format:**
 ```python
 {
-    'symbol': 'BTC',
+    'symbol': 'AAPL',
     'prediction_date': '2025-10-11',
     'predicted_return': 0.05,  # 5% expected return
     'confidence': 0.78,         # 78% confidence
-    'current_price': 122000,
-    'predicted_price': 128100
+    'current_price': 178.50,
+    'predicted_price': 187.43
 }
 ```
 
@@ -185,14 +190,14 @@ def calculate_ml_allocation(predictions):
     """
     Adjust allocation based on ML predictions.
     
-    Baseline: 25% each (equal weight)
+    Baseline: Equal weight across ~30 stocks
     ML Enhancement:
-    - High confidence positive (>5% predicted, >70% conf): 40%
-    - Moderate positive (2-5% predicted): 30%
-    - Neutral (-2% to 2%): 25%
-    - Negative (<-2% predicted): 10%
+    - High confidence positive (>5% predicted, >70% conf): Overweight (up to 15%)
+    - Moderate positive (2-5% predicted): Slight overweight
+    - Neutral (-2% to 2%): Market weight
+    - Negative (<-2% predicted): Underweight (down to 2%)
     """
-    # Apply risk constraints
+    # Apply risk constraints (max 15%, min 2%)
     # Normalize to 100%
     # Return allocation dictionary
 ```
@@ -216,33 +221,34 @@ def calculate_ml_allocation(predictions):
 
 #### 5:00 PM - Data Collection ✅ COMPLETE
 - Built historical_data_fetcher.py (300+ lines, fully documented)
-- Fetched 1 year of data for BTC, ETH, SOL, ADA
-- **365 days per symbol** (1,460 total records)
+- Fetched 1 year of data for initial stock universe
+- **365 days per symbol**
 - Data ranges: Oct 2024 - Oct 2025
 - All data validated (no nulls, no negatives, chronological)
 - Ready for feature engineering
 
 **Data Summary:**
-- **BTC:** $60K - $123K range | 1,779 avg volume
-- **ETH:** $1,472 - $4,830 range | 25,160 avg volume
-- **SOL:** $105 - $261 range | 284K avg volume
-- **ADA:** $0.33 - $1.23 range | 16.6M avg volume
+- **AAPL:** Price history with full OHLCV coverage
+- **MSFT:** Price history with full OHLCV coverage
+- **GOOGL:** Price history with full OHLCV coverage
+- **AMZN:** Price history with full OHLCV coverage
 
 #### 5:45 PM - Feature Engineering ✅ COMPLETE
 - Built feature_engineering.py (300+ lines, fully documented)
-- Created 11 technical indicators:
-  * Moving Averages (7, 14, 30-day)
+- Created 25 technical indicators:
+  * Moving Averages (7, 14, 30, 50, 200-day)
   * RSI (14-day momentum oscillator)
+  * MACD (signal line and histogram)
+  * Bollinger Bands (upper, lower, bandwidth)
   * Volume indicators (MA, ROC)
-  * Price momentum (daily, 7-day)
-  * Volatility (7-day std dev)
-- Tested sequence creation (7-day lookback → 7-day prediction)
-- Created 86 training sequences from test data
+  * Price momentum (daily, 7-day, 21-day)
+  * Volatility (7-day std dev, ATR)
+- Tested sequence creation (30-day lookback -> 21-day prediction)
 - All features properly normalized
 
 #### 6:15 PM - LSTM Model Architecture ✅ COMPLETE
 - Built lstm_model.py (400+ lines, fully documented)
-- 2-layer LSTM with 50 units each
+- 2-layer LSTM with 64 units each
 - Dropout layers (0.2) for regularization
 - Dense output layer for prediction
 - Configured Adam optimizer, MSE loss
@@ -267,15 +273,17 @@ def calculate_ml_allocation(predictions):
 
 ## 🔧 Technical Decisions
 
-### Why 7-Day Lookback?
-- Captures weekly patterns (weekday/weekend effects)
+### Why 30-Day Lookback?
+- Captures monthly patterns and trends
+- Provides enough context for 25 technical indicators
 - Not too short (noisy) or too long (stale)
-- Aligns with weekly rebalancing strategy
+- Standard window for position trading analysis
 
-### Why 7-Day Prediction?
-- Matches rebalancing frequency
+### Why 21-Day Prediction?
+- Matches position trading strategy (approximately one trading month)
 - Long enough for ML to find edge
 - Short enough to be actionable
+- Aligns with portfolio rebalancing frequency
 
 ### Why LSTM over Other Models?
 - **vs Simple Moving Average:** LSTM learns patterns, not fixed rules
@@ -283,13 +291,13 @@ def calculate_ml_allocation(predictions):
 - **vs Transformer:** Simpler, less data needed, easier to train
 - **vs GRU:** Similar performance, LSTM more established
 
-### Why 2 Layers with 50 Units?
+### Why 2 Layers with 64 Units?
 - 1 layer: Too simple, can't learn complex patterns
 - 3+ layers: Risk of overfitting with limited data
-- 50 units: Sweet spot for time series (not too many parameters)
+- 64 units: Good capacity for 25-feature input (not too many parameters)
 
 ### Why Dropout 0.2?
-- Prevents overfitting on volatile crypto data
+- Prevents overfitting on volatile stock data
 - 0.2 = industry standard for time series
 - Tested range: 0.1 too little, 0.3 too much
 
@@ -317,19 +325,20 @@ def calculate_ml_allocation(predictions):
 
 ## 🚧 Challenges & Solutions
 
-### Challenge 1: Limited Training Data
-**Problem:** Only 1 year of data for 4 assets
-**Solution:** 
-- Use data augmentation (different time windows)
-- Cross-validate across assets
-- Start with simpler features
+### Challenge 1: Large Stock Universe
+**Problem:** ~30 stocks with varying characteristics across sectors
+**Solution:**
+- Train sector-specific models or one universal model
+- Cross-validate across sectors
+- Use sector-relative features
 
-### Challenge 2: Crypto Volatility
-**Problem:** Crypto prices are extremely volatile
+### Challenge 2: Market Volatility
+**Problem:** Stock prices can be volatile, especially growth stocks
 **Solution:**
 - Predict returns (%), not absolute prices
 - Use dropout for robustness
 - Don't overfit on specific patterns
+- Zero-commission trading removes fee drag
 
 ### Challenge 3: Overfitting Risk
 **Problem:** Model might memorize training data
@@ -375,7 +384,7 @@ def calculate_ml_allocation(predictions):
 This phase will demonstrate:
 1. End-to-end ML pipeline (data → model → predictions)
 2. Time series forecasting with LSTM
-3. Feature engineering for financial data
+3. Feature engineering for financial data (25 technical indicators)
 4. Model evaluation and validation
 5. Production ML deployment
 6. GCP Vertex AI integration

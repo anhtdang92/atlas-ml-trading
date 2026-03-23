@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Vertex AI Training Job for LSTM Models
-This script runs on Vertex AI to train LSTM models for crypto price prediction
+This script runs on Vertex AI to train LSTM models for stock price prediction
 """
 
 import os
@@ -23,7 +23,7 @@ sys.path.append('/app')
 
 from ml.historical_data_fetcher import HistoricalDataFetcher
 from ml.feature_engineering import FeatureEngineer
-from ml.lstm_model import CryptoLSTM
+from ml.lstm_model import StockLSTM
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -114,7 +114,7 @@ class VertexTrainingJob:
             logger.info(f"◊ Training model for {symbol}...")
             
             # Initialize model
-            model = CryptoLSTM(
+            model = StockLSTM(
                 input_shape=(X.shape[1], X.shape[2]),
                 lstm_units=50,
                 lstm_layers=2,

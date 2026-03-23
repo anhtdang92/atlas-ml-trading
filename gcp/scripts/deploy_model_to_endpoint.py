@@ -26,7 +26,7 @@ from typing import Dict, Any
 
 def predict(request: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Simple prediction function for crypto prices
+    Simple prediction function for stock prices
     This simulates a trained ML model
     """
     
@@ -151,7 +151,7 @@ def build_and_push_model_image(serving_file: str, dockerfile_path: str):
             shutil.copy(dockerfile_path, build_dir)
             
             # Build the image
-            image_name = "gcr.io/crypto-ml-trading-487/crypto-ml-serving:latest"
+            image_name = "gcr.io/stock-ml-trading-487/stock-ml-serving:latest"
             
             result = subprocess.run([
                 'docker', 'build',
@@ -192,7 +192,7 @@ def deploy_model_to_endpoint(image_name: str):
         endpoint_id = "1074806701011501056"
         
         # Create model deployment
-        model_name = f"crypto-ml-model-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        model_name = f"stock-ml-model-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
         logger.info(f"📋 Deploying model to endpoint {endpoint_id}...")
         
@@ -232,7 +232,7 @@ def deploy_model_to_endpoint(image_name: str):
             endpoint_id,
             '--region=us-central1',
             f'--model={model_id}',
-            '--display-name=crypto-ml-deployment',
+            '--display-name=stock-ml-deployment',
             '--machine-type=n1-standard-2',
             '--min-replica-count=1',
             '--max-replica-count=3'

@@ -5,7 +5,7 @@
 **Objective**: Set up production-ready Google Cloud Platform infrastructure for ML predictions
 
 ## 🎯 **Objective Achieved**
-Set up complete GCP ML infrastructure with Vertex AI, BigQuery, Cloud Storage, and IAM for scalable cryptocurrency price predictions.
+Set up complete GCP ML infrastructure with Vertex AI, BigQuery, Cloud Storage, and IAM for scalable stock price predictions.
 
 ## 🏗️ **Infrastructure Created**
 
@@ -23,17 +23,17 @@ Set up complete GCP ML infrastructure with Vertex AI, BigQuery, Cloud Storage, a
 ### ✅ **IAM Security**
 - **ml-training-sa**: Vertex AI training jobs (minimal permissions)
 - **ml-prediction-sa**: Vertex AI predictions (read-only access)
-- **crypto-app-sa**: Streamlit app access (BigQuery read, Storage read, Secret Manager)
+- **stock-app-sa**: Streamlit app access (BigQuery read, Storage read, Secret Manager)
 - Service account keys saved to `config/keys/`
 
 ### ✅ **Cloud Storage**
-- **gs://crypto-ml-trading-487-models**: Model artifacts (1-year retention)
-- **gs://crypto-ml-trading-487-training-data**: Training data (30-day retention)
-- **gs://crypto-ml-trading-487-backups**: System backups (90-day retention)
+- **gs://stock-ml-trading-487-models**: Model artifacts (1-year retention)
+- **gs://stock-ml-trading-487-training-data**: Training data (30-day retention)
+- **gs://stock-ml-trading-487-backups**: System backups (90-day retention)
 - Lifecycle policies for cost optimization
 
 ### ✅ **BigQuery Data Warehouse**
-- **Dataset**: `crypto_data` with 6 partitioned tables
+- **Dataset**: `stock_data` with 6 partitioned tables
 - **Tables**: `historical_prices`, `predictions`, `trades`, `model_metrics`, `portfolio_snapshots`, `rebalancing_events`
 - Time-based partitioning for cost efficiency
 

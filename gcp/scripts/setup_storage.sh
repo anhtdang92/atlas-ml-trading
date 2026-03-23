@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
 
 echo "◈ Setting up Cloud Storage for project: $PROJECT_ID"
@@ -31,7 +31,7 @@ echo "◉ Setting bucket permissions..."
 # Models bucket - allow ML service accounts to read/write
 gsutil iam ch serviceAccount:ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-models
 gsutil iam ch serviceAccount:ml-prediction-sa@$PROJECT_ID.iam.gserviceaccount.com:objectViewer gs://$PROJECT_ID-models
-gsutil iam ch serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com:objectViewer gs://$PROJECT_ID-models
+gsutil iam ch serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com:objectViewer gs://$PROJECT_ID-models
 
 # Training data bucket - allow ML training to read/write
 gsutil iam ch serviceAccount:ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-training-data
@@ -39,7 +39,7 @@ gsutil iam ch serviceAccount:ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com:
 # Backups bucket - allow all service accounts to read/write
 gsutil iam ch serviceAccount:ml-training-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-backups
 gsutil iam ch serviceAccount:ml-prediction-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-backups
-gsutil iam ch serviceAccount:crypto-app-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-backups
+gsutil iam ch serviceAccount:stock-app-sa@$PROJECT_ID.iam.gserviceaccount.com:objectAdmin gs://$PROJECT_ID-backups
 
 # Create folder structure (using touch to create placeholder files)
 echo "◉ Creating folder structure..."

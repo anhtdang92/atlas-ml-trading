@@ -123,7 +123,7 @@ def build_and_push_image():
         result = subprocess.run([
             'docker', 'build',
             '-f', 'Dockerfile.minimal',
-            '-t', 'gcr.io/crypto-ml-trading-487/crypto-minimal-training:latest',
+            '-t', 'gcr.io/stock-ml-trading-487/stock-minimal-training:latest',
             '.'
         ], capture_output=True, text=True, timeout=300)
         
@@ -137,7 +137,7 @@ def build_and_push_image():
         print("📤 Pushing image to Container Registry...")
         result = subprocess.run([
             'docker', 'push',
-            'gcr.io/crypto-ml-trading-487/crypto-minimal-training:latest'
+            'gcr.io/stock-ml-trading-487/stock-minimal-training:latest'
         ], capture_output=True, text=True, timeout=300)
         
         if result.returncode != 0:
@@ -157,14 +157,14 @@ def deploy_training_job():
     
     try:
         # Create job name
-        job_name = f"crypto-minimal-training-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        job_name = f"stock-minimal-training-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
         # Deploy the job using gcloud
         result = subprocess.run([
             'gcloud', 'ai', 'custom-jobs', 'create',
             '--region=us-central1',
             f'--display-name={job_name}',
-            '--worker-pool-spec=machine-type=e2-standard-2,replica-count=1,container-image-uri=gcr.io/crypto-ml-trading-487/crypto-minimal-training:latest'
+            '--worker-pool-spec=machine-type=e2-standard-2,replica-count=1,container-image-uri=gcr.io/stock-ml-trading-487/stock-minimal-training:latest'
         ], capture_output=True, text=True, timeout=60)
         
         if result.returncode == 0:

@@ -5,9 +5,9 @@
 
 set -e
 
-PROJECT_ID="crypto-ml-trading-487"
+PROJECT_ID="stock-ml-trading-487"
 REGION="us-central1"
-BUCKET_NAME="crypto-ml-models-$PROJECT_ID"
+BUCKET_NAME="stock-ml-models-$PROJECT_ID"
 
 echo "◈ Deploying Quick Vertex AI Training"
 echo "◊ Using Google's pre-built TensorFlow containers!"
@@ -19,7 +19,7 @@ gcloud config set project $PROJECT_ID
 # Create training job using correct syntax
 echo "◉ Creating Vertex AI training job..."
 
-JOB_NAME="crypto-quick-training-$(date +%Y%m%d-%H%M%S)"
+JOB_NAME="stock-quick-training-$(date +%Y%m%d-%H%M%S)"
 
 # Submit training job with inline Python code
 echo "◉ Submitting training job: $JOB_NAME"

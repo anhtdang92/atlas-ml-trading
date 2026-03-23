@@ -91,7 +91,7 @@ def get_symbols_by_category(category: str) -> List[str]:
 class StockAPI:
     """Client for fetching stock market data via yfinance.
 
-    Provides a similar interface to the old KrakenAPI but for stocks.
+    Provides stock market data via Yahoo Finance (yfinance).
     All data is free and requires no API keys.
     """
 

@@ -1,4 +1,4 @@
-# Cursor AI Rules for Crypto ML Trading Dashboard
+# Cursor AI Rules for ATLAS Stock ML Trading Dashboard
 
 ## CRITICAL RULES - ALWAYS FOLLOW
 
@@ -38,7 +38,7 @@
 - Include confirmation dialogs for all trade executions
 - Log every trade to BigQuery with timestamp, symbol, quantity, price
 - Implement retry logic with exponential backoff for API calls
-- Handle rate limits gracefully (Kraken: 15 requests/minute)
+- Handle rate limits gracefully (yfinance: respect throttling)
 
 ### ML Best Practices
 - Comment all model architecture choices (layer sizes, dropout rates, etc.)
@@ -52,7 +52,7 @@
 - Implement rate limit handling with appropriate delays
 - Validate API responses before processing
 - Log all API calls (timestamp, endpoint, status code)
-- Use python-kraken-sdk version 2.3.0+
+- Use yfinance for stock data (free, no API key required)
 
 ### GCP Cost Management
 - Optimize BigQuery queries to avoid full table scans
@@ -70,8 +70,8 @@
 - Config files in `config/`, never in code
 
 ### Naming Conventions
-- Files: snake_case (e.g., `data_fetcher.py`)
-- Classes: PascalCase (e.g., `KrakenClient`)
+- Files: snake_case (e.g., `stock_api.py`)
+- Classes: PascalCase (e.g., `StockAPI`)
 - Functions/variables: snake_case (e.g., `calculate_portfolio_value`)
 - Constants: UPPER_CASE (e.g., `MAX_POSITION_SIZE`)
 - Private methods: prefix with underscore (e.g., `_validate_order`)
@@ -116,6 +116,7 @@
 - Handle missing data gracefully (fill forward, interpolate)
 - Log data quality issues
 - Use pagination for large historical data fetches
+- Stock universe defined in `data/stock_api.py` (single source of truth)
 
 ### ML Model Training
 - Save training/validation loss curves
@@ -125,9 +126,9 @@
 - Store model metadata (training date, data range, metrics)
 
 ### Portfolio Rebalancing
-- Calculate exact buy/sell amounts accounting for fees
+- Calculate exact buy/sell amounts (zero-commission trading)
 - Verify sufficient balance before placing orders
-- Round quantities to exchange precision requirements
+- Round quantities to appropriate precision
 - Log rebalancing decisions even in paper trading mode
 - Include human-readable explanations for each trade
 
@@ -138,12 +139,6 @@
 - Include refresh buttons for real-time data
 - Make critical actions (trade execution) require confirmation
 
-### QuantConnect Integration
-- Follow QuantConnect best practices for algorithm structure
-- Use realistic fee models (Kraken: 0.16% maker, 0.26% taker)
-- Log backtest results to local JSON for comparison
-- Document any deviations from live trading logic
-
 ## ERROR HANDLING PATTERNS
 
 ### API Calls
@@ -151,20 +146,15 @@
 import time
 from typing import Optional
 
-def call_kraken_api(endpoint: str, retries: int = 3) -> Optional[dict]:
-    """Call Kraken API with retry logic."""
+def call_stock_api(symbol: str, retries: int = 3) -> Optional[dict]:
+    """Fetch stock data with retry logic."""
     for attempt in range(retries):
         try:
-            response = kraken_client.request(endpoint)
+            response = stock_api.get_quote(symbol)
             return response
-        except RateLimitError:
-            time.sleep(60)  # Wait 1 minute
-        except NetworkError as e:
-            logger.warning(f"Network error on attempt {attempt + 1}: {e}")
-            time.sleep(2 ** attempt)  # Exponential backoff
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return None
+            logger.warning(f"Error on attempt {attempt + 1}: {e}")
+            time.sleep(2 ** attempt)  # Exponential backoff
     return None
 ```
 
@@ -187,22 +177,6 @@ def query_bigquery(query: str, params: dict) -> pd.DataFrame:
         raise
 ```
 
-## CLARIFICATION PROTOCOL
-
-If requirements are ambiguous:
-1. Check `project-context.md` for prior decisions
-2. Look for similar implementations in codebase
-3. If still unclear, ask specific clarifying questions
-4. Document the decision in code comments
-
-## INTERACTION STYLE
-
-- Provide code snippets, not just instructions
-- Explain "why" for non-obvious design choices
-- Suggest improvements proactively
-- Warn about potential pitfalls (e.g., rate limits, data quality issues)
-- Be explicit about trade-offs
-
 ## BUDGET CONSCIOUSNESS
 
 - Optimize for minimal cloud costs
@@ -214,4 +188,3 @@ If requirements are ambiguous:
 ---
 
 **Remember: This project handles real money. Prioritize correctness, safety, and clarity over speed of development.**
-
