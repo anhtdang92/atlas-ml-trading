@@ -1,98 +1,137 @@
-# Crypto ML Trading Dashboard Configuration
+# Stock ML Trading Dashboard Configuration
 
-# Trading pairs to monitor and trade
+# Stock universe to monitor and trade
 trading:
-  symbols:
-    - BTC  # Bitcoin
-    - ETH  # Ethereum
-    - SOL  # Solana
-    - ADA  # Cardano
-  
+  # FAANG+ Tech Leaders
+  tech_stocks:
+    - AAPL   # Apple
+    - MSFT   # Microsoft
+    - GOOGL  # Alphabet
+    - AMZN   # Amazon
+    - NVDA   # NVIDIA
+    - META   # Meta Platforms
+    - TSLA   # Tesla
+
+  # Sector Leaders (top picks per sector)
+  sector_leaders:
+    - JPM    # Financials - JPMorgan Chase
+    - UNH    # Healthcare - UnitedHealth
+    - XOM    # Energy - ExxonMobil
+    - CAT    # Industrials - Caterpillar
+    - PG     # Consumer Staples - Procter & Gamble
+    - HD     # Consumer Discretionary - Home Depot
+    - NEE    # Utilities - NextEra Energy
+    - AMT    # Real Estate - American Tower
+    - LIN    # Materials - Linde
+
+  # ETFs - Broad Market & Sector
+  etfs:
+    - SPY    # S&P 500
+    - QQQ    # Nasdaq 100
+    - DIA    # Dow Jones
+    - IWM    # Russell 2000 (Small Cap)
+    - XLK    # Technology Sector
+    - XLF    # Financial Sector
+    - XLE    # Energy Sector
+    - XLV    # Healthcare Sector
+    - ARKK   # ARK Innovation (Growth)
+
+  # Growth Stocks
+  growth_stocks:
+    - PLTR   # Palantir
+    - CRWD   # CrowdStrike
+    - SNOW   # Snowflake
+    - SQ     # Block (Square)
+    - COIN   # Coinbase
+
   # Rebalancing schedule
-  rebalance_day: "Sunday"  # Day of week
-  rebalance_hour: 22       # 10 PM
-  rebalance_timezone: "America/Chicago"  # CDT
-  
+  rebalance_day: "Friday"       # End of trading week
+  rebalance_hour: 15             # 3 PM ET (before market close)
+  rebalance_timezone: "America/New_York"
+
   # Initial portfolio
-  initial_capital: 5000.0  # USD
-  
+  initial_capital: 25000.0  # USD
+
   # Risk management
-  max_position_size: 0.40   # 40% max per coin
-  min_position_size: 0.10   # 10% min per coin
-  min_trade_amount: 50.0    # Minimum $50 per trade
-  max_single_trade: 2000.0  # Maximum $2000 per trade
-  
+  max_position_size: 0.15    # 15% max per stock
+  min_position_size: 0.02    # 2% min per stock
+  min_trade_amount: 100.0    # Minimum $100 per trade
+  max_single_trade: 5000.0   # Maximum $5000 per trade
+
   # Trading mode
   paper_trading: true  # Set to false for live trading (BE CAREFUL!)
 
 # ML Model Configuration
 ml:
   model_type: "LSTM"
-  
+
   # LSTM architecture
   lstm:
     layers: 2
-    units: 50
+    units: 64
     dropout: 0.2
-    
-  # Training parameters
+
+  # Training parameters - Position trading (weeks-months)
   training:
-    lookback_days: 7        # Use 7 days to predict next day
-    prediction_horizon: 7   # Predict 7 days ahead
-    train_val_split: 0.8    # 80% train, 20% validation
+    lookback_days: 30         # Use 30 days to predict
+    prediction_horizon: 21    # Predict 21 trading days ahead (~1 month)
+    train_val_split: 0.8      # 80% train, 20% validation
     batch_size: 32
-    epochs: 100
-    early_stopping_patience: 10
-    
+    epochs: 150
+    early_stopping_patience: 15
+
   # Feature engineering
   features:
-    moving_averages: [7, 14, 30]
+    moving_averages: [10, 20, 50, 200]
     use_rsi: true
+    use_macd: true
+    use_bollinger: true
     use_volume_indicators: true
     use_momentum: true
+    use_earnings_proximity: true
 
 # Data fetching
 data:
-  source: "kraken"  # Primary data source
-  backup_source: "coinapi"  # Backup if Kraken fails
-  
+  source: "yfinance"       # Primary data source (free, no API key)
+  backup_source: "none"
+
   # Historical data
-  historical_days: 365  # Fetch 1 year of historical data
-  
+  historical_days: 730  # Fetch 2 years of historical data
+
   # Update schedule
-  update_frequency: "daily"  # How often to fetch new data
-  update_hour: 1  # 1 AM
+  update_frequency: "daily"
+  update_hour: 18  # 6 PM ET (after market close)
 
 # Google Cloud Platform
 gcp:
   region: "us-central1"
-  project_id: "crypto-ml-trading-487"
-  
+  project_id: "stock-ml-trading-487"
+
   # BigQuery
   bigquery:
-    dataset: "crypto_data"
+    dataset: "stock_data"
     tables:
       historical_prices: "historical_prices"
       predictions: "predictions"
       trades: "trades"
       model_metrics: "model_metrics"
-  
+
   # Cloud Storage
   storage:
-    models_bucket: "crypto-ml-models-487"
-    backups_bucket: "crypto-ml-backups-487"
-  
+    models_bucket: "stock-ml-models-487"
+    backups_bucket: "stock-ml-backups-487"
+
   # Vertex AI
   vertex_ai:
     machine_type: "n1-standard-4"
-    use_preemptible: true  # Save costs
+    use_preemptible: true
 
 # Streamlit Dashboard
 dashboard:
-  title: "Crypto ML Trading Dashboard"
-  refresh_interval: 60  # seconds
-  cache_ttl: 300  # Cache data for 5 minutes
-  
+  title: "ATLAS - Stock ML Intelligence Dashboard"
+  refresh_interval: 300  # 5 minutes (stocks don't update as fast as crypto)
+  cache_ttl: 300
+
   # Display settings
   display:
     currency: "USD"
@@ -101,7 +140,7 @@ dashboard:
 
 # Logging
 logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
   format: "json"
   log_to_bigquery: true
 
@@ -110,12 +149,9 @@ notifications:
   enabled: true
   channels:
     - "email"
-    # - "slack"  # Uncomment when configured
-  
-  # When to send notifications
   notify_on:
     - "trade_execution"
     - "model_training_complete"
     - "api_errors"
     - "weekly_summary"
-
+    - "earnings_alert"

@@ -1,16 +1,15 @@
 """
-Prediction Service for Crypto ML Trading Dashboard
+Prediction Service for Stock ML Trading Dashboard
 
-This service integrates all ML components to provide real-time predictions:
-- Fetches historical data from Kraken API
-- Applies feature engineering
+Integrates all ML components to provide real-time stock predictions:
+- Fetches historical data via yfinance
+- Applies feature engineering (25 technical indicators)
 - Loads trained LSTM models
 - Generates predictions with confidence scores
-- Handles model training and evaluation
 
 Architecture:
-    Data Flow: Kraken API → Feature Engineering → LSTM Model → Predictions
-    Caching: Predictions cached for 1 hour to reduce API calls
+    Data Flow: yfinance → Feature Engineering → LSTM Model → Predictions
+    Caching: Predictions cached for 1 hour
     Error Handling: Graceful fallbacks for missing models/data
 """
 
@@ -23,174 +22,125 @@ import os
 import pickle
 from pathlib import Path
 
-# Local imports
 from .historical_data_fetcher import HistoricalDataFetcher
 from .feature_engineering import FeatureEngineer
 
-# Try to import LSTM model, fallback to mock if not available
 try:
-    from .lstm_model import CryptoLSTM
+    from .lstm_model import StockLSTM
     HAS_LSTM = True
 except ImportError:
-    print("⚠️  LSTM model not available (TensorFlow required)")
+    print("Warning: LSTM model not available (TensorFlow required)")
     HAS_LSTM = False
-    CryptoLSTM = None
+    StockLSTM = None
 
 logger = logging.getLogger(__name__)
 
 
+# Default symbols for predictions
+DEFAULT_SYMBOLS = [
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
+    'SPY', 'QQQ', 'JPM', 'UNH', 'XOM'
+]
+
+
 class PredictionService:
-    """
-    Main service for cryptocurrency price predictions.
-    
-    This service orchestrates the entire ML pipeline:
-    1. Data Collection: Fetch recent data from Kraken
-    2. Feature Engineering: Create technical indicators
-    3. Model Prediction: Generate forecasts using LSTM or Vertex AI
-    4. Confidence Scoring: Assess prediction reliability
-    """
-    
+    """Main service for stock price predictions."""
+
     def __init__(self, models_dir: str = "models", provider: str = "vertex"):
-        """
-        Initialize prediction service.
-        
-        Args:
-            models_dir: Directory to store/load trained models
-            provider: Prediction provider ('local' or 'vertex')
-        """
         self.models_dir = Path(models_dir)
         self.models_dir.mkdir(exist_ok=True)
-        
-        # Initialize components
+
         self.data_fetcher = HistoricalDataFetcher()
         self.feature_engineer = FeatureEngineer()
-        
-        # Model cache
+
         self.models = {}
         self.scalers = {}
-        
-        # Supported symbols
-        self.symbols = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'XRP']
-        
-        # Provider configuration
+
+        self.symbols = DEFAULT_SYMBOLS
+
         self.provider = provider
         self.vertex_service = None
-        
-        # Initialize Vertex AI if requested
+
         if provider == "vertex":
             self._init_vertex_ai()
-        
-        logger.info("◈ Prediction Service initialized")
+
+        logger.info("Prediction Service initialized")
         logger.info(f"   Models directory: {self.models_dir}")
         logger.info(f"   Provider: {provider}")
-        logger.info(f"   Supported symbols: {', '.join(self.symbols)}")
-    
+
     def _init_vertex_ai(self):
         """Initialize Vertex AI prediction service."""
         try:
             from gcp.deployment.vertex_prediction_service import VertexPredictionService
-            
-            # Get configuration from environment or config
-            project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'crypto-ml-trading-487')
+
+            project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'stock-ml-trading-487')
             region = os.getenv('GCP_REGION', 'us-central1')
-            endpoint_id = os.getenv('VERTEX_ENDPOINT_ID', '1074806701011501056')  # Our deployed endpoint
-            
+            endpoint_id = os.getenv('VERTEX_ENDPOINT_ID', '')
+
             if endpoint_id:
                 self.vertex_service = VertexPredictionService(
-                    project_id=project_id,
-                    region=region,
-                    endpoint_id=endpoint_id
+                    project_id=project_id, region=region, endpoint_id=endpoint_id
                 )
-                logger.info("◊ Vertex AI service initialized")
+                logger.info("Vertex AI service initialized")
             else:
-                logger.warning("◊ Vertex AI endpoint ID not configured, falling back to local")
+                logger.warning("Vertex AI endpoint ID not configured, falling back to local")
                 self.provider = "local"
-                
+
         except ImportError:
-            logger.warning("◊ Vertex AI dependencies not available, falling back to local")
+            logger.warning("Vertex AI dependencies not available, falling back to local")
             self.provider = "local"
         except Exception as e:
-            logger.warning(f"◊ Vertex AI initialization failed: {e}, falling back to local")
+            logger.warning(f"Vertex AI initialization failed: {e}, falling back to local")
             self.provider = "local"
-    
+
     def get_prediction(
         self,
         symbol: str,
-        days_ahead: int = 7,
+        days_ahead: int = 21,
         use_cache: bool = True
     ) -> Dict:
-        """
-        Get price prediction for a cryptocurrency.
-        
+        """Get price prediction for a stock.
+
         Args:
-            symbol: Crypto symbol (e.g., 'BTC', 'ETH')
-            days_ahead: Days to predict ahead (default: 7)
-            use_cache: Use cached prediction if available
-            
+            symbol: Stock ticker (e.g., 'AAPL', 'SPY')
+            days_ahead: Days to predict ahead (default: 21 trading days)
+
         Returns:
-            Dictionary with prediction data:
-            {
-                'symbol': 'BTC',
-                'current_price': 122001.0,
-                'predicted_price': 128500.0,
-                'predicted_return': 0.053,
-                'confidence': 0.78,
-                'prediction_date': '2025-10-04',
-                'model_version': 'v1.0',
-                'features_used': ['close', 'MA_7', 'RSI', ...],
-                'status': 'success'
-            }
+            Prediction dictionary with prices, return, confidence
         """
-        logger.info(f"◊ Generating prediction for {symbol} ({days_ahead} days ahead)")
-        
-        # Use Vertex AI if available
+        logger.info(f"Generating prediction for {symbol} ({days_ahead} days ahead)")
+
         if self.provider == "vertex" and self.vertex_service:
             return self._get_vertex_prediction(symbol, days_ahead)
-        
-        # For now, always use mock predictions since TensorFlow is not available
+
         if not HAS_LSTM:
-            logger.info("Using mock predictions (TensorFlow not available)")
             return self._create_mock_prediction(symbol, days_ahead)
-        
+
         try:
-            # Check if we have a trained model
             if not self._has_model(symbol):
                 return self._create_mock_prediction(symbol, days_ahead)
-            
-            # Fetch recent data
-            df = self.data_fetcher.fetch_historical_data(symbol, days=90)
-            if df is None or len(df) < 30:
-                logger.warning(f"Insufficient data for {symbol}, using mock prediction")
+
+            df = self.data_fetcher.fetch_historical_data(symbol, days=365)
+            if df is None or len(df) < 60:
                 return self._create_mock_prediction(symbol, days_ahead)
-            
-            # Apply feature engineering
+
             df_features = self.feature_engineer.calculate_features(df)
-            
-            # Normalize features
             df_normalized = self.feature_engineer.normalize_features(df_features)
-            
-            # Load model
+
             model = self._load_model(symbol)
             if model is None:
                 return self._create_mock_prediction(symbol, days_ahead)
-            
-            # Prepare input sequence (last 7 days)
-            lookback = 7
+
+            lookback = 30
             feature_data = df_normalized[self.feature_engineer.features].values
             last_sequence = feature_data[-lookback:].reshape(1, lookback, -1)
-            
-            # Make prediction
+
             predicted_return = model.predict(last_sequence)[0]
-            
-            # Calculate predicted price
             current_price = df['close'].iloc[-1]
             predicted_price = current_price * (1 + predicted_return)
-            
-            # Calculate confidence (simplified - based on model certainty)
             confidence = min(0.95, max(0.1, 1.0 - abs(predicted_return) * 2))
-            
-            # Create result
-            result = {
+
+            return {
                 'symbol': symbol,
                 'current_price': float(current_price),
                 'predicted_price': float(predicted_price),
@@ -202,123 +152,72 @@ class PredictionService:
                 'status': 'success',
                 'data_points': len(df)
             }
-            
-            logger.info(f"✅ Prediction generated for {symbol}: {predicted_return*100:+.2f}% return")
-            return result
-            
+
         except Exception as e:
             logger.error(f"Error generating prediction for {symbol}: {e}")
             return self._create_mock_prediction(symbol, days_ahead)
-    
-    def get_all_predictions(self, days_ahead: int = 7) -> List[Dict]:
-        """
-        Get predictions for all supported cryptocurrencies.
-        
-        Args:
-            days_ahead: Days to predict ahead
-            
-        Returns:
-            List of prediction dictionaries
-        """
-        logger.info(f"🔮 Generating predictions for all {len(self.symbols)} symbols")
-        
+
+    def get_all_predictions(self, days_ahead: int = 21) -> List[Dict]:
+        """Get predictions for all tracked stocks."""
+        logger.info(f"Generating predictions for {len(self.symbols)} symbols")
         predictions = []
         for symbol in self.symbols:
             pred = self.get_prediction(symbol, days_ahead)
             predictions.append(pred)
-        
-        # Sort by predicted return (highest first)
         predictions.sort(key=lambda x: x['predicted_return'], reverse=True)
-        
-        logger.info(f"✅ Generated {len(predictions)} predictions")
+        logger.info(f"Generated {len(predictions)} predictions")
         return predictions
-    
+
     def train_model(
         self,
         symbol: str,
-        days: int = 365,
-        epochs: int = 50,
+        days: int = 730,
+        epochs: int = 150,
         save_model: bool = True
     ) -> Dict:
-        """
-        Train LSTM model for a specific cryptocurrency.
-        
-        Args:
-            symbol: Crypto symbol to train
-            days: Days of historical data to use
-            epochs: Number of training epochs
-            save_model: Whether to save the trained model
-            
-        Returns:
-            Training results dictionary
-        """
-        logger.info(f"🚀 Training LSTM model for {symbol}...")
-        
-        # Check if TensorFlow is available
+        """Train LSTM model for a specific stock."""
+        logger.info(f"Training LSTM model for {symbol}...")
+
         if not HAS_LSTM:
             return {
                 'status': 'error',
-                'message': 'TensorFlow not available. Please install TensorFlow to train models.',
-                'symbol': symbol,
-                'solution': 'Run: pip install tensorflow (requires Python 3.9-3.11)'
+                'message': 'TensorFlow not available. Install with: pip install tensorflow',
+                'symbol': symbol
             }
-        
+
         try:
-            # Fetch historical data
             df = self.data_fetcher.fetch_historical_data(symbol, days)
-            if df is None or len(df) < 100:
-                return {
-                    'status': 'error',
-                    'message': f'Insufficient data for {symbol}',
-                    'symbol': symbol
-                }
-            
-            # Apply feature engineering
+            if df is None or len(df) < 200:
+                return {'status': 'error', 'message': f'Insufficient data for {symbol}', 'symbol': symbol}
+
             df_features = self.feature_engineer.calculate_features(df)
             df_normalized = self.feature_engineer.normalize_features(df_features)
-            
-            # Create sequences
+
             X, y = self.feature_engineer.create_sequences(
-                df_normalized, 
-                lookback=7, 
-                prediction_horizon=7
+                df_normalized, lookback=30, prediction_horizon=21
             )
-            
-            if len(X) < 50:
-                return {
-                    'status': 'error',
-                    'message': f'Insufficient sequences for {symbol}',
-                    'symbol': symbol
-                }
-            
-            # Split data
+
+            if len(X) < 100:
+                return {'status': 'error', 'message': f'Insufficient sequences for {symbol}', 'symbol': symbol}
+
             split_idx = int(len(X) * 0.8)
             X_train, X_val = X[:split_idx], X[split_idx:]
             y_train, y_val = y[:split_idx], y[split_idx:]
-            
-            # Build and train model
-            model = CryptoLSTM(
-                lookback=7,
+
+            model = StockLSTM(
+                lookback=30,
                 num_features=len(self.feature_engineer.features),
-                lstm_units=50,
-                dropout_rate=0.2
+                lstm_units=64, dropout_rate=0.2
             )
-            
+
             model.build_model()
-            history = model.train(
-                X_train, y_train, X_val, y_val,
-                epochs=epochs, batch_size=32, verbose=0
-            )
-            
-            # Evaluate model
+            history = model.train(X_train, y_train, X_val, y_val, epochs=epochs, batch_size=32, verbose=0)
             metrics = model.evaluate(X_val, y_val)
-            
-            # Save model if requested
+
             if save_model:
                 model_path = self.models_dir / f"{symbol}_model.h5"
                 model.save_model(str(model_path))
-                
-                # Save scaler info
+
                 scaler_path = self.models_dir / f"{symbol}_scaler.pkl"
                 scaler_info = {
                     'features': self.feature_engineer.features,
@@ -327,9 +226,8 @@ class PredictionService:
                 }
                 with open(scaler_path, 'wb') as f:
                     pickle.dump(scaler_info, f)
-            
-            # Create result
-            result = {
+
+            return {
                 'status': 'success',
                 'symbol': symbol,
                 'training_samples': len(X_train),
@@ -340,92 +238,55 @@ class PredictionService:
                 'metrics': metrics,
                 'model_saved': save_model
             }
-            
-            logger.info(f"✅ Model training complete for {symbol}")
-            logger.info(f"   Final validation loss: {result['final_val_loss']:.6f}")
-            logger.info(f"   Directional accuracy: {metrics['directional_accuracy']*100:.2f}%")
-            
-            return result
-            
+
         except Exception as e:
             logger.error(f"Error training model for {symbol}: {e}")
-            return {
-                'status': 'error',
-                'message': str(e),
-                'symbol': symbol
-            }
-    
-    def train_all_models(self, days: int = 365, epochs: int = 50) -> Dict:
-        """
-        Train models for all supported cryptocurrencies.
-        
-        Args:
-            days: Days of historical data to use
-            epochs: Number of training epochs per model
-            
-        Returns:
-            Training results for all symbols
-        """
-        logger.info(f"🚀 Training models for all {len(self.symbols)} symbols...")
-        
+            return {'status': 'error', 'message': str(e), 'symbol': symbol}
+
+    def train_all_models(self, days: int = 730, epochs: int = 150) -> Dict:
+        """Train models for all tracked stocks."""
+        logger.info(f"Training models for {len(self.symbols)} symbols...")
         results = {}
         for i, symbol in enumerate(self.symbols):
             logger.info(f"\n[{i+1}/{len(self.symbols)}] Training {symbol}...")
             result = self.train_model(symbol, days, epochs)
             results[symbol] = result
-        
-        # Summary
+
         successful = sum(1 for r in results.values() if r['status'] == 'success')
-        logger.info(f"\n✅ Training complete: {successful}/{len(self.symbols)} models trained successfully")
-        
+        logger.info(f"\nTraining complete: {successful}/{len(self.symbols)} models trained")
         return results
-    
+
     def _has_model(self, symbol: str) -> bool:
-        """Check if trained model exists for symbol."""
         model_path = self.models_dir / f"{symbol}_model.h5"
         return model_path.exists()
-    
-    def _load_model(self, symbol: str) -> Optional[CryptoLSTM]:
-        """Load trained model for symbol."""
+
+    def _load_model(self, symbol: str) -> Optional[StockLSTM]:
         try:
             model_path = self.models_dir / f"{symbol}_model.h5"
             if not model_path.exists():
                 return None
-            
-            # Create model instance
-            model = CryptoLSTM(
-                lookback=7,
+            model = StockLSTM(
+                lookback=30,
                 num_features=len(self.feature_engineer.features),
-                lstm_units=50,
-                dropout_rate=0.2
+                lstm_units=64, dropout_rate=0.2
             )
-            
-            # Load weights
             model.load_model(str(model_path))
             return model
-            
         except Exception as e:
             logger.error(f"Error loading model for {symbol}: {e}")
             return None
-    
+
     def _get_vertex_prediction(self, symbol: str, days_ahead: int) -> Dict:
-        """Get prediction using Vertex AI endpoint."""
         try:
-            logger.info(f"◊ Using Vertex AI for {symbol} prediction")
-            
-            # Get prediction from Vertex AI
             prediction = self.vertex_service.predict_single(symbol, days_ahead)
-            
             if 'error' in prediction:
-                logger.warning(f"◊ Vertex AI prediction failed for {symbol}: {prediction['error']}")
                 return self._create_mock_prediction(symbol, days_ahead)
-            
-            # Convert to standard format
-            result = {
+
+            return {
                 'symbol': symbol,
                 'current_price': prediction['current_price'],
                 'predicted_price': prediction['predicted_price'],
-                'predicted_return': prediction['price_change'] / 100,  # Convert percentage to decimal
+                'predicted_return': prediction['price_change'] / 100,
                 'confidence': prediction['confidence'],
                 'prediction_date': prediction['timestamp'].strftime('%Y-%m-%d'),
                 'model_version': prediction['model_version'],
@@ -434,62 +295,50 @@ class PredictionService:
                 'data_points': 0,
                 'provider': 'vertex_ai'
             }
-            
-            logger.info(f"◊ Vertex AI prediction for {symbol}: {result['predicted_return']*100:+.2f}% return")
-            return result
-            
         except Exception as e:
-            logger.error(f"◊ Vertex AI prediction error for {symbol}: {e}")
+            logger.error(f"Vertex AI error for {symbol}: {e}")
             return self._create_mock_prediction(symbol, days_ahead)
-    
+
     def _create_mock_prediction(self, symbol: str, days_ahead: int) -> Dict:
         """Create enhanced mock prediction with technical analysis."""
         try:
-            from data.kraken_api import KrakenAPI
-            
-            # Get real current price
-            kraken = KrakenAPI()
-            pair_map = {
-                'BTC': 'XXBTZUSD',
-                'ETH': 'XETHZUSD', 
-                'SOL': 'SOLUSD',
-                'ADA': 'ADAUSD',
-                'DOT': 'DOTUSD',
-                'XRP': 'XXRPZUSD'
-            }
-            
-            current_price = 1000.0  # Default
-            pair = pair_map.get(symbol)
-            if pair:
-                try:
-                    ticker_data = kraken.get_ticker([pair])
-                    if ticker_data:
-                        matching_key = [k for k in ticker_data.keys() if pair in k or k in pair]
-                        if matching_key:
-                            current_price = float(ticker_data[matching_key[0]]['c'][0])
-                except:
-                    pass
-            
+            from data.stock_api import StockAPI
+            api = StockAPI()
+
+            current_price = None
+            quote = api.get_quote(symbol)
+            if quote:
+                current_price = quote['current']
+
+            if current_price is None:
+                # Fallback prices for common stocks
+                fallback_prices = {
+                    'AAPL': 185.0, 'MSFT': 420.0, 'GOOGL': 175.0, 'AMZN': 185.0,
+                    'NVDA': 880.0, 'META': 510.0, 'TSLA': 175.0,
+                    'SPY': 520.0, 'QQQ': 450.0,
+                    'JPM': 200.0, 'UNH': 530.0, 'XOM': 110.0,
+                }
+                current_price = fallback_prices.get(symbol, 100.0)
+
             # Enhanced prediction with technical analysis simulation
-            np.random.seed(hash(symbol) % 2**32)  # Consistent seed
-            
-            # Simulate technical indicators
+            np.random.seed(hash(symbol) % 2**32)
+
             rsi = np.random.uniform(30, 70)
-            trend = np.random.normal(0.01, 0.02)  # Slight upward bias
-            volatility = np.random.uniform(0.02, 0.05)
-            
-            # Generate prediction based on simulated indicators
-            momentum_factor = (rsi - 50) / 50 * 0.3
-            trend_factor = trend * 0.4
+            trend = np.random.normal(0.02, 0.03)  # Stocks have slight upward bias
+            volatility = np.random.uniform(0.01, 0.04)
+
+            momentum_factor = (rsi - 50) / 50 * 0.2
+            trend_factor = trend * 0.5
             noise_factor = np.random.normal(0, 0.01)
-            
+
             predicted_return = momentum_factor + trend_factor + noise_factor
+            # Scale by prediction horizon
+            predicted_return *= (days_ahead / 21.0)
             predicted_price = current_price * (1 + predicted_return)
-            
-            # Calculate confidence based on signal strength
+
             signal_strength = abs(momentum_factor) + abs(trend_factor)
-            confidence = min(0.95, max(0.4, 0.6 + signal_strength * 2))
-            
+            confidence = min(0.90, max(0.4, 0.55 + signal_strength * 2))
+
             return {
                 'symbol': symbol,
                 'current_price': float(current_price),
@@ -507,15 +356,15 @@ class PredictionService:
                     'volatility': float(volatility)
                 }
             }
-            
+
         except Exception as e:
             logger.warning(f"Enhanced mock failed for {symbol}: {e}")
-            # Fallback to basic mock
             np.random.seed(hash(symbol) % 2**32)
-            predicted_return = np.random.normal(0.02, 0.05)
+            current_price = 100.0
+            predicted_return = np.random.normal(0.03, 0.08)
             predicted_price = current_price * (1 + predicted_return)
-            confidence = np.random.uniform(0.6, 0.8)
-            
+            confidence = np.random.uniform(0.5, 0.7)
+
             return {
                 'symbol': symbol,
                 'current_price': float(current_price),
@@ -524,34 +373,7 @@ class PredictionService:
                 'confidence': float(confidence),
                 'prediction_date': datetime.now().strftime('%Y-%m-%d'),
                 'model_version': 'basic-mock',
-                'features_used': ['real_price'],
+                'features_used': ['estimated_price'],
                 'status': 'basic_mock',
                 'data_points': 0
             }
-
-
-def main():
-    """Test the prediction service."""
-    print("="*60)
-    print("🧪 Testing Prediction Service")
-    print("="*60)
-    
-    # Initialize service
-    service = PredictionService()
-    
-    # Test mock predictions
-    print("\n🔮 Testing mock predictions...")
-    for symbol in ['BTC', 'ETH', 'SOL']:
-        pred = service.get_prediction(symbol)
-        print(f"\n{symbol}:")
-        print(f"   Current: ${pred['current_price']:,.2f}")
-        print(f"   Predicted: ${pred['predicted_price']:,.2f}")
-        print(f"   Return: {pred['predicted_return']*100:+.2f}%")
-        print(f"   Confidence: {pred['confidence']*100:.1f}%")
-        print(f"   Status: {pred['status']}")
-    
-    print("\n✅ Prediction service test complete!")
-
-
-if __name__ == "__main__":
-    main()

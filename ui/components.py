@@ -1,28 +1,26 @@
 """
-NOVA UI Components - Reusable widgets and layout helpers
+ATLAS UI Components - Reusable widgets and layout helpers
 """
 import streamlit as st
 from ui.styles import THEME
 
+
 def load_css():
     """Inject global CSS."""
     from ui.styles import GLOBAL_CSS
-    # Inject FontAwesome via link tag for better reliability
     st.markdown('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">', unsafe_allow_html=True)
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
+
 def card_start():
-    """Start a glass card container."""
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 
+
 def card_end():
-    """End a glass card container."""
     st.markdown('</div>', unsafe_allow_html=True)
 
+
 def metric_card(label, value, delta=None, delta_color="normal", icon=None):
-    """
-    Custom metric card with icon and neon styling.
-    """
     delta_html = ""
     if delta:
         color = THEME['text_secondary']
@@ -34,7 +32,6 @@ def metric_card(label, value, delta=None, delta_color="normal", icon=None):
             elif delta.startswith("-"):
                 color = THEME['accent_danger']
                 icon_arrow = "▼"
-        
         delta_html = f'<div style="color: {color}; font-size: 0.9rem; margin-top: 4px;">{icon_arrow} {delta}</div>'
 
     icon_html = ""
@@ -52,8 +49,8 @@ def metric_card(label, value, delta=None, delta_color="normal", icon=None):
     </div>
     """, unsafe_allow_html=True)
 
+
 def section_header(title, icon=None):
-    """Render a section header with icon."""
     icon_html = f'<i class="fa-solid {icon}" style="margin-right: 10px; color: {THEME["accent_secondary"]};"></i>' if icon else ""
     st.markdown(f"""
     <h2 style="border-bottom: 1px solid {THEME['border_color']}; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">
@@ -61,17 +58,19 @@ def section_header(title, icon=None):
     </h2>
     """, unsafe_allow_html=True)
 
+
 def status_badge(status, text=None):
-    """Render a glowing status badge."""
     colors = {
         "online": THEME['accent_success'],
         "offline": THEME['text_muted'],
         "error": THEME['accent_danger'],
-        "training": THEME['accent_warning']
+        "training": THEME['accent_warning'],
+        "market_open": THEME['accent_success'],
+        "market_closed": THEME['accent_warning'],
     }
     color = colors.get(status, THEME['accent_primary'])
     display_text = text if text else status.upper()
-    
+
     return f"""
     <span style="
         background: rgba(0,0,0,0.3);
