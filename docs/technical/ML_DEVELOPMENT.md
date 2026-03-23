@@ -291,10 +291,10 @@ def calculate_ml_allocation(predictions):
 - **vs Transformer:** Simpler, less data needed, easier to train
 - **vs GRU:** Similar performance, LSTM more established
 
-### Why 2 Layers with 50 Units?
+### Why 2 Layers with 64 Units?
 - 1 layer: Too simple, can't learn complex patterns
 - 3+ layers: Risk of overfitting with limited data
-- 50 units: Sweet spot for time series (not too many parameters)
+- 64 units: Good capacity for 25-feature input (not too many parameters)
 
 ### Why Dropout 0.2?
 - Prevents overfitting on volatile stock data
@@ -325,12 +325,12 @@ def calculate_ml_allocation(predictions):
 
 ## 🚧 Challenges & Solutions
 
-### Challenge 1: Limited Training Data
-**Problem:** Only 1 year of data for 4 assets
-**Solution:** 
-- Use data augmentation (different time windows)
-- Cross-validate across assets
-- Start with simpler features
+### Challenge 1: Large Stock Universe
+**Problem:** ~30 stocks with varying characteristics across sectors
+**Solution:**
+- Train sector-specific models or one universal model
+- Cross-validate across sectors
+- Use sector-relative features
 
 ### Challenge 2: Market Volatility
 **Problem:** Stock prices can be volatile
