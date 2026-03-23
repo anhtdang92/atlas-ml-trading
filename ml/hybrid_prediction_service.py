@@ -113,7 +113,54 @@ class HybridPredictionService:
             return basic
 
     def _predict_with_local_model(self, symbol: str, days_ahead: int) -> Optional[Dict]:
-        return None  # Placeholder for actual model loading
+        """Load a trained local LSTM model and generate a real prediction."""
+        try:
+            from ml.lstm_model import StockLSTM, HAS_TENSORFLOW
+            if not HAS_TENSORFLOW:
+                return None
+
+            from ml.feature_engineering import FeatureEngineer
+            from ml.historical_data_fetcher import HistoricalDataFetcher
+
+            model_info = self.local_ml_models.get(symbol)
+            if not model_info or not os.path.exists(model_info['path']):
+                return None
+
+            # Load model
+            fe = FeatureEngineer()
+            fetcher = HistoricalDataFetcher()
+            df = fetcher.fetch_historical_data(symbol, days=365)
+            if df is None or len(df) < 60:
+                return None
+
+            df_features = fe.calculate_features(df)
+            df_normalized = fe.normalize_features(df_features)
+
+            model = StockLSTM(lookback=30, num_features=len(fe.features),
+                              lstm_units=64, dropout_rate=0.2)
+            model.load_model(model_info['path'])
+
+            feature_data = df_normalized[fe.features].values
+            last_sequence = feature_data[-30:].reshape(1, 30, -1)
+            predicted_return = float(model.predict(last_sequence)[0])
+
+            current_price = float(df['close'].iloc[-1])
+            predicted_price = current_price * (1 + predicted_return)
+            confidence = min(0.95, max(0.1, 1.0 - abs(predicted_return) * 2))
+
+            return {
+                'symbol': symbol,
+                'current_price': current_price,
+                'predicted_price': predicted_price,
+                'predicted_return': predicted_return,
+                'confidence': confidence,
+                'days_ahead': days_ahead,
+                'status': 'success',
+                'timestamp': datetime.now().isoformat(),
+            }
+        except Exception as e:
+            logger.warning(f"Local ML prediction failed for {symbol}: {e}")
+            return None
 
     def _get_basic_mock_prediction(self, symbol: str, days_ahead: int) -> Dict:
         import numpy as np

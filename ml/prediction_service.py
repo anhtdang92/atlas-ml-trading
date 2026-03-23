@@ -24,6 +24,7 @@ from pathlib import Path
 
 from .historical_data_fetcher import HistoricalDataFetcher
 from .feature_engineering import FeatureEngineer
+from data.stock_api import get_all_symbols
 
 try:
     from .lstm_model import StockLSTM
@@ -36,11 +37,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-# Default symbols for predictions
-DEFAULT_SYMBOLS = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
-    'SPY', 'QQQ', 'JPM', 'UNH', 'XOM'
-]
+# Default symbols for predictions - sourced from stock_api.STOCK_UNIVERSE
+DEFAULT_SYMBOLS = get_all_symbols()
 
 
 class PredictionService:

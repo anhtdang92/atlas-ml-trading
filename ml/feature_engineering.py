@@ -134,7 +134,7 @@ class FeatureEngineer:
         df = self.calculate_volatility(df)
 
         # Fill NaN values
-        df = df.fillna(method='bfill').fillna(method='ffill')
+        df = df.bfill().ffill()
 
         self.features = [
             'close', 'volume',

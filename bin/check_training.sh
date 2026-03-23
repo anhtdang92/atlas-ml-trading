@@ -2,8 +2,14 @@
 
 # 📊 Check ML Training Progress
 
-JOB_ID="projects/64620033647/locations/us-central1/customJobs/4173161697067925504"
-REGION="us-central1"
+REGION="${GCP_REGION:-us-central1}"
+
+# Get latest job ID dynamically
+JOB_ID=$(gcloud ai custom-jobs list --region=$REGION --sort-by=~createTime --limit=1 --format="value(name)" 2>/dev/null)
+if [ -z "$JOB_ID" ]; then
+    echo "❌ No training jobs found. Run ./bin/train_now.sh first."
+    exit 1
+fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  📊 ML Training Progress Checker"
@@ -41,7 +47,7 @@ case $STATUS in
         echo "📦 Models have been trained and saved to Cloud Storage"
         echo ""
         echo "✅ Next step: Deploy the models to an endpoint"
-        echo "   Run: bash scripts/deployment/deploy_budget_endpoint.sh"
+        echo "   See docs/TRAIN_ML_MODELS.md for endpoint deployment steps"
         ;;
     "JOB_STATE_FAILED")
         echo "❌ Training failed"

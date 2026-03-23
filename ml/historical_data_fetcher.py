@@ -121,7 +121,7 @@ class HistoricalDataFetcher:
 
         if df.isnull().any().any():
             logger.warning(f"Missing values found in {symbol} data, forward filling")
-            df.fillna(method='ffill', inplace=True)
+            df.ffill(inplace=True)
 
         if (df[['open', 'high', 'low', 'close']] < 0).any().any():
             logger.error(f"Negative prices found in {symbol}")

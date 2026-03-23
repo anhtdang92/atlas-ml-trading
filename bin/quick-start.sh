@@ -1,7 +1,7 @@
 #!/bin/bash
-# Quick Start Script for Crypto ML Trading Dashboard
+# Quick Start Script for ATLAS Stock ML Trading Dashboard
 
-echo "🚀 Starting Crypto ML Trading Dashboard..."
+echo "🚀 Starting ATLAS Stock ML Trading Dashboard..."
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then

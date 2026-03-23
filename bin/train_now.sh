@@ -6,7 +6,7 @@
 set -e
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🚀 NOVA Crypto ML Training Launcher"
+echo "  🚀 ATLAS Stock ML Training Launcher"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -34,12 +34,12 @@ echo ""
 echo "1. 💰 Budget Training (Recommended)"
 echo "   - Cost: $3-8"
 echo "   - Time: 30-60 min"
-echo "   - Cryptos: BTC, ETH, SOL, ADA"
+echo "   - Stocks: AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA"
 echo ""
 echo "2. 🚀 Full Training"
 echo "   - Cost: $8-15"
 echo "   - Time: 1-2 hours"
-echo "   - Cryptos: BTC, ETH, SOL, ADA, DOT, XRP"
+echo "   - Stocks: All 30 tracked symbols (Tech, Sector Leaders, ETFs, Growth)"
 echo ""
 echo "3. 📊 Check Training Status"
 echo ""
@@ -60,7 +60,7 @@ case $choice in
         echo ""
         read -p "Continue? (y/n): " confirm
         if [ "$confirm" = "y" ]; then
-            bash scripts/deployment/deploy_budget_training.sh
+            echo "⚠️  GCP deployment scripts not yet created. See docs/TRAIN_ML_MODELS.md"
         else
             echo "❌ Cancelled"
         fi
@@ -73,7 +73,7 @@ case $choice in
         echo ""
         read -p "Continue? (y/n): " confirm
         if [ "$confirm" = "y" ]; then
-            bash scripts/deployment/deploy_vertex_training.sh
+            echo "⚠️  GCP deployment scripts not yet created. See docs/TRAIN_ML_MODELS.md"
         else
             echo "❌ Cancelled"
         fi
@@ -92,13 +92,13 @@ case $choice in
         echo "⚙️  Setting up GCP infrastructure..."
         echo ""
         echo "Step 1: Enabling APIs..."
-        bash scripts/deployment/enable_apis.sh
+        echo "⚠️  GCP setup scripts not yet created. See docs/TRAIN_ML_MODELS.md"
         echo ""
         echo "Step 2: Setting up storage..."
-        bash scripts/deployment/setup_storage.sh
+        echo "   (storage setup placeholder)"
         echo ""
         echo "Step 3: Setting up IAM..."
-        bash scripts/deployment/setup_iam.sh
+        echo "   (IAM setup placeholder)"
         echo ""
         echo "✅ Setup complete! You can now train models."
         ;;
