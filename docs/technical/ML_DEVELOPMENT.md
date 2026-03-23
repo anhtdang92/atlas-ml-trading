@@ -18,7 +18,7 @@
 1. Fetch 1+ year of historical OHLCV data from Yahoo Finance
 2. Store data in BigQuery for reproducibility
 3. Build 2-layer LSTM neural network
-4. Train model to predict 7-day price movements
+4. Train model to predict 21-day price movements
 5. Generate predictions with confidence scores
 6. Integrate predictions into backtesting engine
 7. Validate ML improves performance
@@ -32,7 +32,7 @@ Data Pipeline:
 Yahoo Finance → historical_data_fetcher.py → BigQuery (stock_data.historical_prices)
                                               ↓
 Feature Engineering:
-BigQuery → feature_engineering.py → Features (MA, RSI, Volume, Momentum)
+BigQuery → feature_engineering.py → Features (25 indicators: MAs, RSI, MACD, Bollinger Bands, volume, momentum, volatility, ATR)
                                         ↓
 Model Training:
 Features → lstm_model.py → TensorFlow/Keras → Trained Model
@@ -60,11 +60,12 @@ Predictions → Streamlit → User Interface
 **Purpose:** Fetch 365+ days of OHLCV data from Yahoo Finance
 
 **Features:**
-- Fetch data for AAPL, MSFT, GOOGL, AMZN
+- Fetch data for ~30 stocks (AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA + sector leaders + ETFs + growth)
 - Daily candlestick data (OHLCV)
 - Store in BigQuery with timestamps
 - Handle rate limits and retries
 - Validate data quality
+- No API key required (yfinance is free)
 
 **Output:** BigQuery table `stock_data.historical_prices`
 
@@ -73,21 +74,25 @@ Predictions → Streamlit → User Interface
 ### 2. Feature Engineering Pipeline ⏳
 **File:** `ml/feature_engineering.py`
 
-**Purpose:** Create technical indicators for ML model
+**Purpose:** Create 25 technical indicators for ML model
 
 **Features to Calculate:**
-- **Moving Averages:** 7-day, 14-day, 30-day
+- **Moving Averages:** 7-day, 14-day, 30-day, 50-day, 200-day
 - **RSI (Relative Strength Index):** 14-day period
-- **Volume Indicators:** 
+- **MACD:** Signal line and histogram
+- **Bollinger Bands:** Upper, lower, bandwidth
+- **Volume Indicators:**
   - Volume moving average (7-day)
   - Volume rate of change
 - **Price Momentum:**
   - Daily returns
   - 7-day momentum
+  - 21-day momentum
 - **Volatility:**
   - Standard deviation (7-day rolling)
+  - ATR (Average True Range)
 
-**Output:** Feature matrix ready for LSTM
+**Output:** Feature matrix ready for LSTM (25 features)
 
 ---
 
