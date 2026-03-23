@@ -102,20 +102,20 @@ Predictions → Streamlit → User Interface
 **Architecture:**
 ```python
 Model: Sequential
-├── LSTM Layer 1: 50 units, return_sequences=True
+├── LSTM Layer 1: 64 units, return_sequences=True
 │   └── Dropout: 0.2
-├── LSTM Layer 2: 50 units, return_sequences=False
+├── LSTM Layer 2: 64 units, return_sequences=False
 │   └── Dropout: 0.2
-├── Dense Layer: 25 units, activation='relu'
+├── Dense Layer: 32 units, activation='relu'
 └── Output Layer: 1 unit (predicted return)
 
-Input: (7 days × N features)
-Output: Predicted 7-day return (%)
+Input: (30 days × 25 features)
+Output: Predicted 21-day return (%)
 ```
 
 **Hyperparameters:**
-- Lookback window: 7 days
-- Prediction horizon: 7 days
+- Lookback window: 30 days
+- Prediction horizon: 21 days (position trading)
 - Batch size: 32
 - Epochs: 100
 - Optimizer: Adam (lr=0.001)
@@ -142,8 +142,8 @@ Output: Predicted 7-day return (%)
 
 **Training Process:**
 1. Load historical data from BigQuery
-2. Engineer features
-3. Create sequences (7-day windows)
+2. Engineer 25 features
+3. Create sequences (30-day windows)
 4. Split train/validation sets
 5. Train LSTM model
 6. Evaluate on validation set
@@ -155,12 +155,12 @@ Output: Predicted 7-day return (%)
 ### 5. Prediction Generator ⏳
 **File:** `ml/predict.py`
 
-**Purpose:** Generate 7-day predictions for each stock
+**Purpose:** Generate 21-day predictions for each stock
 
 **Process:**
 1. Load trained model from Cloud Storage
-2. Fetch latest 7 days of data
-3. Calculate features
+2. Fetch latest 30 days of data
+3. Calculate 25 features
 4. Generate prediction
 5. Calculate confidence score
 6. Store in BigQuery
