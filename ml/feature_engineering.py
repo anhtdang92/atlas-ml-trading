@@ -1,24 +1,29 @@
 """
-Feature Engineering for Crypto Price Prediction
+Feature Engineering for Stock Price Prediction
 
 Creates technical indicators and features from raw OHLCV data for LSTM model input.
+Designed for position trading (weeks-months timeframe).
 
 Features Created:
-1. Moving Averages (MA): 7-day, 14-day, 30-day
+1. Moving Averages (MA): 10, 20, 50, 200-day
 2. Relative Strength Index (RSI): 14-day
-3. Volume Indicators: Volume MA, Volume Rate of Change
-4. Price Momentum: Daily returns, 7-day momentum
-5. Volatility: 7-day rolling standard deviation
+3. MACD: 12/26/9 signal line crossover
+4. Bollinger Bands: 20-day, 2 std deviations
+5. Volume Indicators: Volume MA, OBV trend, Volume Rate of Change
+6. Price Momentum: Daily returns, 14-day and 30-day momentum
+7. Volatility: 14-day and 30-day rolling standard deviation
+8. Price relative to moving averages (position signals)
 
 Architecture Decision:
 - All features normalized to [0, 1] range for LSTM stability
 - Missing values filled forward (common in time series)
 - Features scaled per-symbol to handle different price ranges
+- 30-day lookback for position trading
 
 Usage:
     fe = FeatureEngineer()
     df = fe.calculate_features(raw_df)
-    X, y = fe.create_sequences(df, lookback=7)
+    X, y = fe.create_sequences(df, lookback=30)
 """
 
 import pandas as pd
@@ -30,319 +35,216 @@ logger = logging.getLogger(__name__)
 
 
 class FeatureEngineer:
-    """
-    Create features from raw OHLCV data.
-    
-    Technical Indicators Explained:
-    
-    1. Moving Average (MA): Average price over N days
-       - Smooths out noise
-       - Shows trend direction
-       - 7-day: Short-term trend
-       - 14-day: Medium-term trend
-       - 30-day: Long-term trend
-    
-    2. RSI (Relative Strength Index): Momentum oscillator (0-100)
-       - > 70: Overbought (might drop)
-       - < 30: Oversold (might rise)
-       - Measures speed/magnitude of price changes
-    
-    3. Volume Indicators: Trading activity
-       - High volume + price up = strong uptrend
-       - High volume + price down = strong downtrend
-       - Low volume = weak signal
-    
-    4. Momentum: Rate of price change
-       - Positive = upward pressure
-       - Negative = downward pressure
-       - Magnitude = strength of move
-    
-    5. Volatility: Price variation
-       - High volatility = risky, opportunity
-       - Low volatility = stable, boring
-       - Important for risk management
-    """
-    
+    """Create features from raw OHLCV stock data for position trading."""
+
     def __init__(self):
-        """Initialize feature engineer."""
         self.features = []
-    
+
     def calculate_moving_averages(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate moving averages.
-        
-        Args:
-            df: DataFrame with 'close' column
-            
-        Returns:
-            DataFrame with MA_7, MA_14, MA_30 columns
-        """
-        df['MA_7'] = df['close'].rolling(window=7, min_periods=1).mean()
-        df['MA_14'] = df['close'].rolling(window=14, min_periods=1).mean()
-        df['MA_30'] = df['close'].rolling(window=30, min_periods=1).mean()
-        
-        logger.info("✅ Calculated moving averages (7, 14, 30-day)")
+        """Calculate moving averages (10, 20, 50, 200-day)."""
+        df['MA_10'] = df['close'].rolling(window=10, min_periods=1).mean()
+        df['MA_20'] = df['close'].rolling(window=20, min_periods=1).mean()
+        df['MA_50'] = df['close'].rolling(window=50, min_periods=1).mean()
+        df['MA_200'] = df['close'].rolling(window=200, min_periods=1).mean()
+
+        # Price relative to MAs (useful signals)
+        df['Price_to_MA50'] = df['close'] / df['MA_50']
+        df['Price_to_MA200'] = df['close'] / df['MA_200']
+        df['MA_50_200_Cross'] = df['MA_50'] / df['MA_200']  # Golden/Death cross signal
+
+        logger.info("Calculated moving averages (10, 20, 50, 200-day)")
         return df
-    
+
     def calculate_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
-        """
-        Calculate Relative Strength Index.
-        
-        RSI Formula:
-        1. Calculate price changes (deltas)
-        2. Separate gains and losses
-        3. Calculate average gain and average loss over period
-        4. RS = average gain / average loss
-        5. RSI = 100 - (100 / (1 + RS))
-        
-        Args:
-            df: DataFrame with 'close' column
-            period: RSI period (default: 14 days)
-            
-        Returns:
-            DataFrame with RSI column (0-100)
-        """
-        # Calculate price changes
+        """Calculate Relative Strength Index."""
         delta = df['close'].diff()
-        
-        # Separate gains and losses
         gain = (delta.where(delta > 0, 0)).rolling(window=period, min_periods=1).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=period, min_periods=1).mean()
-        
-        # Calculate RS and RSI
         rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        df['RSI'] = rsi
-        
-        logger.info(f"✅ Calculated RSI ({period}-day)")
+        df['RSI'] = 100 - (100 / (1 + rs))
+        logger.info(f"Calculated RSI ({period}-day)")
         return df
-    
+
+    def calculate_macd(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate MACD (12/26/9)."""
+        ema12 = df['close'].ewm(span=12, adjust=False).mean()
+        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+        df['MACD'] = ema12 - ema26
+        df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
+        df['MACD_Histogram'] = df['MACD'] - df['MACD_Signal']
+        logger.info("Calculated MACD (12/26/9)")
+        return df
+
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+        """Calculate Bollinger Bands (20-day, 2 std dev)."""
+        df['BB_Middle'] = df['close'].rolling(window=period, min_periods=1).mean()
+        bb_std = df['close'].rolling(window=period, min_periods=1).std()
+        df['BB_Upper'] = df['BB_Middle'] + (bb_std * 2)
+        df['BB_Lower'] = df['BB_Middle'] - (bb_std * 2)
+        # Bollinger %B - where price is relative to bands (0=lower, 1=upper)
+        df['BB_Width'] = (df['BB_Upper'] - df['BB_Lower']) / df['BB_Middle']
+        df['BB_Position'] = (df['close'] - df['BB_Lower']) / (df['BB_Upper'] - df['BB_Lower'])
+        logger.info("Calculated Bollinger Bands")
+        return df
+
     def calculate_volume_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate volume-based indicators.
-        
-        Indicators:
-        - Volume_MA_7: 7-day average volume
-        - Volume_ROC: Rate of change in volume
-        
-        Args:
-            df: DataFrame with 'volume' column
-            
-        Returns:
-            DataFrame with volume indicators
-        """
-        df['Volume_MA_7'] = df['volume'].rolling(window=7, min_periods=1).mean()
-        df['Volume_ROC'] = df['volume'].pct_change(periods=7)
-        
-        logger.info("✅ Calculated volume indicators")
+        """Calculate volume-based indicators."""
+        df['Volume_MA_20'] = df['volume'].rolling(window=20, min_periods=1).mean()
+        df['Volume_ROC'] = df['volume'].pct_change(periods=10)
+        # Volume relative to average (spike detection)
+        df['Volume_Ratio'] = df['volume'] / df['Volume_MA_20']
+        logger.info("Calculated volume indicators")
         return df
-    
+
     def calculate_momentum(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate price momentum indicators.
-        
-        Indicators:
-        - Daily_Return: (today - yesterday) / yesterday
-        - Momentum_7: 7-day rate of change
-        
-        Args:
-            df: DataFrame with 'close' column
-            
-        Returns:
-            DataFrame with momentum indicators
-        """
+        """Calculate price momentum indicators for position trading."""
         df['Daily_Return'] = df['close'].pct_change()
-        df['Momentum_7'] = df['close'].pct_change(periods=7)
-        
-        logger.info("✅ Calculated momentum indicators")
+        df['Momentum_14'] = df['close'].pct_change(periods=14)
+        df['Momentum_30'] = df['close'].pct_change(periods=30)
+        # Rate of change
+        df['ROC_10'] = (df['close'] - df['close'].shift(10)) / df['close'].shift(10)
+        logger.info("Calculated momentum indicators")
         return df
-    
+
     def calculate_volatility(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate volatility (risk) indicators.
-        
-        Indicators:
-        - Volatility_7: 7-day rolling standard deviation of returns
-        
-        Args:
-            df: DataFrame with 'close' column
-            
-        Returns:
-            DataFrame with volatility column
-        """
+        """Calculate volatility indicators."""
         returns = df['close'].pct_change()
-        df['Volatility_7'] = returns.rolling(window=7, min_periods=1).std()
-        
-        logger.info("✅ Calculated volatility indicators")
+        df['Volatility_14'] = returns.rolling(window=14, min_periods=1).std()
+        df['Volatility_30'] = returns.rolling(window=30, min_periods=1).std()
+        # ATR (Average True Range) - good for position sizing
+        high_low = df['high'] - df['low']
+        high_close = (df['high'] - df['close'].shift()).abs()
+        low_close = (df['low'] - df['close'].shift()).abs()
+        true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        df['ATR_14'] = true_range.rolling(window=14, min_periods=1).mean()
+        logger.info("Calculated volatility indicators")
         return df
-    
+
     def calculate_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate all technical indicators.
-        
-        Args:
-            df: Raw OHLCV DataFrame
-            
-        Returns:
-            DataFrame with all features added
-        """
-        logger.info(f"🔧 Calculating features for {len(df)} records...")
-        
-        # Make a copy to avoid modifying original
+        """Calculate all technical indicators for stock prediction."""
+        logger.info(f"Calculating features for {len(df)} records...")
         df = df.copy()
-        
-        # Calculate all features
+
         df = self.calculate_moving_averages(df)
         df = self.calculate_rsi(df)
+        df = self.calculate_macd(df)
+        df = self.calculate_bollinger_bands(df)
         df = self.calculate_volume_indicators(df)
         df = self.calculate_momentum(df)
         df = self.calculate_volatility(df)
-        
-        # Fill NaN values (from initial rolling windows)
+
+        # Fill NaN values
         df = df.fillna(method='bfill').fillna(method='ffill')
-        
-        # Store feature list
+
         self.features = [
             'close', 'volume',
-            'MA_7', 'MA_14', 'MA_30',
+            'MA_10', 'MA_20', 'MA_50', 'MA_200',
+            'Price_to_MA50', 'Price_to_MA200', 'MA_50_200_Cross',
             'RSI',
-            'Volume_MA_7', 'Volume_ROC',
-            'Daily_Return', 'Momentum_7',
-            'Volatility_7'
+            'MACD', 'MACD_Signal', 'MACD_Histogram',
+            'BB_Width', 'BB_Position',
+            'Volume_MA_20', 'Volume_ROC', 'Volume_Ratio',
+            'Daily_Return', 'Momentum_14', 'Momentum_30', 'ROC_10',
+            'Volatility_14', 'Volatility_30', 'ATR_14'
         ]
-        
-        logger.info(f"✅ Feature engineering complete! Created {len(self.features)} features")
+
+        logger.info(f"Feature engineering complete! Created {len(self.features)} features")
         return df
-    
+
     def create_sequences(
         self,
         df: pd.DataFrame,
-        lookback: int = 7,
-        prediction_horizon: int = 7
+        lookback: int = 30,
+        prediction_horizon: int = 21
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Create sequences for LSTM training.
-        
-        LSTM needs sequences: Use past 7 days to predict next 7 days.
-        
-        Example:
-            Input (X): Days 1-7 features
-            Output (y): Day 14 return (7 days ahead)
-            
-            Input (X): Days 2-8 features  
-            Output (y): Day 15 return
-            
-            ... and so on
-        
+        """Create sequences for LSTM training.
+
+        For position trading: 30-day lookback to predict 21-day (~1 month) returns.
+
         Args:
             df: DataFrame with features
-            lookback: Number of days to look back (default: 7)
-            prediction_horizon: Days ahead to predict (default: 7)
-            
+            lookback: Number of days to look back (default: 30)
+            prediction_horizon: Days ahead to predict (default: 21 trading days)
+
         Returns:
             X: Input sequences (samples, lookback, features)
             y: Target values (samples,) - predicted returns
         """
-        logger.info(f"📊 Creating sequences: lookback={lookback}, horizon={prediction_horizon}")
-        
-        # Extract feature columns
+        logger.info(f"Creating sequences: lookback={lookback}, horizon={prediction_horizon}")
+
         feature_data = df[self.features].values
-        
+
         # Calculate future returns (target variable)
+        df = df.copy()
         df['Future_Return'] = df['close'].pct_change(periods=prediction_horizon).shift(-prediction_horizon)
-        
-        # Remove rows without future data
         df = df.dropna(subset=['Future_Return'])
-        
+
         X, y = [], []
-        
+
         for i in range(len(df) - lookback):
-            # Input: past 'lookback' days of features
             sequence = feature_data[i:i+lookback]
-            
-            # Output: future return after 'prediction_horizon' days
             target = df['Future_Return'].iloc[i+lookback]
-            
             X.append(sequence)
             y.append(target)
-        
+
         X = np.array(X)
         y = np.array(y)
-        
-        logger.info(f"✅ Created {len(X)} sequences")
+
+        logger.info(f"Created {len(X)} sequences")
         logger.info(f"   Input shape: {X.shape} (samples, timesteps, features)")
         logger.info(f"   Output shape: {y.shape} (samples,)")
-        
+
         return X, y
-    
+
     def normalize_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Normalize features to [0, 1] range.
-        
-        Why normalize?
-        - LSTM works better with normalized inputs
-        - Prevents large values from dominating
-        - Faster convergence during training
-        
-        Method: Min-Max scaling per feature
-        
-        Args:
-            df: DataFrame with features
-            
-        Returns:
-            Normalized DataFrame
-        """
-        logger.info("🔄 Normalizing features...")
-        
+        """Normalize features to [0, 1] range."""
+        logger.info("Normalizing features...")
         df_normalized = df.copy()
-        
+
         for feature in self.features:
             if feature in df.columns:
                 min_val = df[feature].min()
                 max_val = df[feature].max()
-                
                 if max_val > min_val:
                     df_normalized[feature] = (df[feature] - min_val) / (max_val - min_val)
                 else:
                     df_normalized[feature] = 0
-        
-        logger.info("✅ Features normalized")
+
+        logger.info("Features normalized")
         return df_normalized
 
 
 def main():
     """Test feature engineering on sample data."""
-    print("="*60)
-    print("🧪 Testing Feature Engineering")
-    print("="*60)
-    
-    # Create sample data
-    dates = pd.date_range(end=datetime.now(), periods=100, freq='D')
+    print("=" * 60)
+    print("Testing Feature Engineering for Stocks")
+    print("=" * 60)
+
+    from datetime import datetime
+    dates = pd.date_range(end=datetime.now(), periods=300, freq='B')  # Business days
+    np.random.seed(42)
+    price = np.random.randn(300).cumsum() + 150
     df = pd.DataFrame({
         'timestamp': dates,
-        'close': np.random.randn(100).cumsum() + 100,
-        'volume': np.random.rand(100) * 1000
+        'open': price + np.random.randn(300) * 0.5,
+        'high': price + abs(np.random.randn(300)) * 2,
+        'low': price - abs(np.random.randn(300)) * 2,
+        'close': price,
+        'volume': np.random.rand(300) * 1000000 + 500000
     })
-    
-    # Test feature calculation
+
     fe = FeatureEngineer()
     df_features = fe.calculate_features(df)
-    
-    print(f"\n✅ Features created: {fe.features}")
-    print(f"\nSample of engineered features:")
-    print(df_features[fe.features].tail())
-    
-    # Test sequence creation
-    X, y = fe.create_sequences(df_features, lookback=7, prediction_horizon=7)
-    
-    print(f"\n✅ Sequences created:")
+
+    print(f"\nFeatures created: {fe.features}")
+    print(f"Total features: {len(fe.features)}")
+
+    X, y = fe.create_sequences(df_features, lookback=30, prediction_horizon=21)
+    print(f"\nSequences created:")
     print(f"   Input shape: {X.shape}")
     print(f"   Target shape: {y.shape}")
-    print(f"\n📝 Ready for LSTM training!")
+    print(f"\nReady for LSTM training!")
 
 
 if __name__ == "__main__":
-    from datetime import datetime
     main()
-

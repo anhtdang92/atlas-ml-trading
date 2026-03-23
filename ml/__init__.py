@@ -1,2 +1,1 @@
-"""Machine Learning modules for crypto price prediction."""
-
+"""Machine Learning modules for stock price prediction."""
