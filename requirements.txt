@@ -5,7 +5,7 @@ pandas==2.2.3
 numpy==1.26.4
 
 # Machine Learning
-# tensorflow==2.15.0  # Uncomment for real ML training (requires Python 3.9-3.11)
+tensorflow==2.15.0    # Required for LSTM training (GPU auto-detected via CUDA)
 scikit-learn==1.5.2
 # xgboost==2.0.3     # Optional: uncomment for XGBoost baseline comparison
 

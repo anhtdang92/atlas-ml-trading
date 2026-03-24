@@ -24,7 +24,8 @@ app.py (Streamlit Dashboard)
 ## Key Entry Points
 
 - **Dashboard:** `streamlit run app.py` (localhost:8501)
-- **Training:** `./bin/train_now.sh` (interactive ML training launcher)
+- **Local Training:** `./bin/train_local.sh` (train on local GPU/CPU — no cloud needed)
+- **Cloud Training:** `./bin/train_now.sh` (train on Google Cloud Vertex AI)
 - **Setup:** `./bin/quick-start.sh` (first-time environment setup)
 - **Tests:** `python -m pytest tests/` or `python tests/unit/test_stock_api.py`
 
