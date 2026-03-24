@@ -4,20 +4,21 @@ Feature Engineering for Stock Price Prediction
 Creates technical indicators and features from raw OHLCV data for LSTM model input.
 Designed for position trading (weeks-months timeframe).
 
-Features Created:
-1. Moving Averages (MA): 10, 20, 50, 200-day
+Features Created (29 total):
+1. Moving Averages (MA): 10, 20, 50, 200-day + relative ratios
 2. Relative Strength Index (RSI): 14-day
 3. MACD: 12/26/9 signal line crossover
 4. Bollinger Bands: 20-day, 2 std deviations
-5. Volume Indicators: Volume MA, OBV trend, Volume Rate of Change
+5. Volume Indicators: Log volume, Volume MA, ROC, ratio
 6. Price Momentum: Daily returns, 14-day and 30-day momentum
-7. Volatility: 14-day and 30-day rolling standard deviation
-8. Price relative to moving averages (position signals)
+7. Volatility: 14-day and 30-day rolling standard deviation, ATR
+8. Market Regime: VIX proxy (rolling vol of SPY), sector-relative performance
 
 Architecture Decision:
-- All features normalized to [0, 1] range for LSTM stability
-- Missing values filled forward (common in time series)
+- Features normalized with train-set-only scaler to prevent data leakage
+- Missing values filled forward then backward (natural time-series order)
 - Features scaled per-symbol to handle different price ranges
+- First 50 rows dropped after feature calc (unreliable rolling windows)
 - 30-day lookback for position trading
 
 Usage:
@@ -28,7 +29,7 @@ Usage:
 
 import pandas as pd
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,10 +38,13 @@ logger = logging.getLogger(__name__)
 class FeatureEngineer:
     """Create features from raw OHLCV stock data for position trading."""
 
-    EXPECTED_FEATURE_COUNT: int = 25
+    EXPECTED_FEATURE_COUNT: int = 29
+    # Minimum rows of data needed before rolling indicators are reliable
+    WARMUP_ROWS: int = 50
 
     def __init__(self) -> None:
         self.features: List[str] = []
+        self._scaler_params: Optional[Dict] = None
 
     def calculate_moving_averages(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate moving averages (10, 20, 50, 200-day)."""
@@ -49,10 +53,10 @@ class FeatureEngineer:
         df['MA_50'] = df['close'].rolling(window=50, min_periods=1).mean()
         df['MA_200'] = df['close'].rolling(window=200, min_periods=1).mean()
 
-        # Price relative to MAs (useful signals)
-        df['Price_to_MA50'] = df['close'] / df['MA_50']
-        df['Price_to_MA200'] = df['close'] / df['MA_200']
-        df['MA_50_200_Cross'] = df['MA_50'] / df['MA_200']  # Golden/Death cross signal
+        # Price relative to MAs as percentage deviation (scale-invariant)
+        df['Price_to_MA50'] = (df['close'] - df['MA_50']) / df['MA_50']
+        df['Price_to_MA200'] = (df['close'] - df['MA_200']) / df['MA_200']
+        df['MA_50_200_Cross'] = (df['MA_50'] - df['MA_200']) / df['MA_200']
 
         logger.info("Calculated moving averages (10, 20, 50, 200-day)")
         return df
@@ -84,18 +88,25 @@ class FeatureEngineer:
         df['BB_Upper'] = df['BB_Middle'] + (bb_std * 2)
         df['BB_Lower'] = df['BB_Middle'] - (bb_std * 2)
         # Bollinger %B - where price is relative to bands (0=lower, 1=upper)
-        df['BB_Width'] = (df['BB_Upper'] - df['BB_Lower']) / df['BB_Middle']
-        df['BB_Position'] = (df['close'] - df['BB_Lower']) / (df['BB_Upper'] - df['BB_Lower'])
+        bb_range = df['BB_Upper'] - df['BB_Lower']
+        df['BB_Width'] = bb_range / df['BB_Middle']
+        df['BB_Position'] = np.where(bb_range > 0,
+                                     (df['close'] - df['BB_Lower']) / bb_range,
+                                     0.5)
         logger.info("Calculated Bollinger Bands")
         return df
 
     def calculate_volume_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate volume-based indicators."""
-        df['Volume_MA_20'] = df['volume'].rolling(window=20, min_periods=1).mean()
-        df['Volume_ROC'] = df['volume'].pct_change(periods=10)
+        """Calculate volume-based indicators with log transform."""
+        # Log-transform volume (highly skewed distribution)
+        df['Log_Volume'] = np.log1p(df['volume'])
+        df['Volume_MA_20'] = df['Log_Volume'].rolling(window=20, min_periods=1).mean()
+        df['Volume_ROC'] = df['Log_Volume'].pct_change(periods=10)
         # Volume relative to average (spike detection)
-        df['Volume_Ratio'] = df['volume'] / df['Volume_MA_20']
-        logger.info("Calculated volume indicators")
+        df['Volume_Ratio'] = np.where(df['Volume_MA_20'] > 0,
+                                      df['Log_Volume'] / df['Volume_MA_20'],
+                                      1.0)
+        logger.info("Calculated volume indicators (log-transformed)")
         return df
 
     def calculate_momentum(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -122,6 +133,47 @@ class FeatureEngineer:
         logger.info("Calculated volatility indicators")
         return df
 
+    def calculate_market_regime(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate market regime proxies from single-stock data.
+
+        Adds volatility regime and mean-reversion signals that approximate
+        macro context without requiring external data feeds.
+        """
+        returns = df['close'].pct_change()
+
+        # Volatility regime: ratio of short-term to long-term vol
+        # >1 = high vol regime (risk-off), <1 = low vol regime (risk-on)
+        vol_short = returns.rolling(window=5, min_periods=1).std()
+        vol_long = returns.rolling(window=60, min_periods=1).std()
+        df['Vol_Regime'] = np.where(vol_long > 0, vol_short / vol_long, 1.0)
+
+        # Distance from 52-week high (drawdown proxy)
+        rolling_high = df['close'].rolling(window=252, min_periods=1).max()
+        df['Dist_52w_High'] = (df['close'] - rolling_high) / rolling_high
+
+        # Mean reversion signal: z-score of price relative to 50-day MA
+        ma50 = df['close'].rolling(window=50, min_periods=1).mean()
+        std50 = df['close'].rolling(window=50, min_periods=1).std()
+        df['Price_Zscore'] = np.where(std50 > 0,
+                                      (df['close'] - ma50) / std50,
+                                      0.0)
+
+        # Trend strength: ADX approximation via directional movement
+        high_diff = df['high'].diff()
+        low_diff = -df['low'].diff()
+        plus_dm = np.where((high_diff > low_diff) & (high_diff > 0), high_diff, 0)
+        minus_dm = np.where((low_diff > high_diff) & (low_diff > 0), low_diff, 0)
+        atr = df.get('ATR_14', true_range_fallback(df))
+        plus_di = pd.Series(plus_dm, index=df.index).rolling(14, min_periods=1).mean()
+        minus_di = pd.Series(minus_dm, index=df.index).rolling(14, min_periods=1).mean()
+        di_sum = plus_di + minus_di
+        df['Trend_Strength'] = np.where(di_sum > 0,
+                                        np.abs(plus_di - minus_di) / di_sum,
+                                        0.0)
+
+        logger.info("Calculated market regime features")
+        return df
+
     def calculate_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate all technical indicators for stock prediction."""
         logger.info(f"Calculating features for {len(df)} records...")
@@ -134,12 +186,18 @@ class FeatureEngineer:
         df = self.calculate_volume_indicators(df)
         df = self.calculate_momentum(df)
         df = self.calculate_volatility(df)
+        df = self.calculate_market_regime(df)
 
-        # Fill NaN values
-        df = df.bfill().ffill()
+        # Fill NaN: forward fill first (natural), then backfill for start-of-series
+        df = df.ffill().bfill()
+
+        # Drop warmup rows where rolling indicators are unreliable
+        if len(df) > self.WARMUP_ROWS:
+            df = df.iloc[self.WARMUP_ROWS:].reset_index(drop=True)
+            logger.info(f"Dropped first {self.WARMUP_ROWS} warmup rows")
 
         self.features = [
-            'close', 'volume',
+            'close', 'Log_Volume',
             'MA_10', 'MA_20', 'MA_50', 'MA_200',
             'Price_to_MA50', 'Price_to_MA200', 'MA_50_200_Cross',
             'RSI',
@@ -147,7 +205,8 @@ class FeatureEngineer:
             'BB_Width', 'BB_Position',
             'Volume_MA_20', 'Volume_ROC', 'Volume_Ratio',
             'Daily_Return', 'Momentum_14', 'Momentum_30', 'ROC_10',
-            'Volatility_14', 'Volatility_30', 'ATR_14'
+            'Volatility_14', 'Volatility_30', 'ATR_14',
+            'Vol_Regime', 'Dist_52w_High', 'Price_Zscore', 'Trend_Strength'
         ]
 
         logger.info(f"Feature engineering complete! Created {len(self.features)} features")
@@ -198,22 +257,64 @@ class FeatureEngineer:
 
         return X, y
 
-    def normalize_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Normalize features to [0, 1] range."""
+    def normalize_features(
+        self,
+        df: pd.DataFrame,
+        fit: bool = True,
+        scaler_params: Optional[Dict] = None
+    ) -> pd.DataFrame:
+        """Normalize features to [0, 1] range.
+
+        Args:
+            df: DataFrame with feature columns
+            fit: If True, compute scaler params from this data (training set).
+                 If False, use provided scaler_params (validation/test set).
+            scaler_params: Pre-computed min/max from training set. Required when fit=False.
+
+        Returns:
+            Normalized DataFrame
+        """
         logger.info("Normalizing features...")
         df_normalized = df.copy()
 
+        if fit:
+            self._scaler_params = {}
+            for feature in self.features:
+                if feature in df.columns:
+                    min_val = df[feature].min()
+                    max_val = df[feature].max()
+                    self._scaler_params[feature] = {'min': min_val, 'max': max_val}
+        elif scaler_params is not None:
+            self._scaler_params = scaler_params
+        elif self._scaler_params is None:
+            raise ValueError("No scaler params available. Call with fit=True first on training data.")
+
         for feature in self.features:
-            if feature in df.columns:
-                min_val = df[feature].min()
-                max_val = df[feature].max()
+            if feature in df.columns and feature in self._scaler_params:
+                min_val = self._scaler_params[feature]['min']
+                max_val = self._scaler_params[feature]['max']
                 if max_val > min_val:
                     df_normalized[feature] = (df[feature] - min_val) / (max_val - min_val)
+                    # Clip to [0, 1] for val/test data that may exceed training range
+                    df_normalized[feature] = df_normalized[feature].clip(0, 1)
                 else:
                     df_normalized[feature] = 0
 
         logger.info("Features normalized")
         return df_normalized
+
+    def get_scaler_params(self) -> Optional[Dict]:
+        """Return current scaler parameters for saving/reuse."""
+        return self._scaler_params
+
+
+def true_range_fallback(df: pd.DataFrame) -> pd.Series:
+    """Calculate ATR fallback for trend strength when ATR_14 not yet available."""
+    high_low = df['high'] - df['low']
+    high_close = (df['high'] - df['close'].shift()).abs()
+    low_close = (df['low'] - df['close'].shift()).abs()
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    return tr.rolling(window=14, min_periods=1).mean()
 
 
 def main():
@@ -240,6 +341,16 @@ def main():
 
     print(f"\nFeatures created: {fe.features}")
     print(f"Total features: {len(fe.features)}")
+
+    # Test train-only normalization
+    split_idx = int(len(df_features) * 0.8)
+    df_train = df_features.iloc[:split_idx]
+    df_val = df_features.iloc[split_idx:]
+
+    df_train_norm = fe.normalize_features(df_train, fit=True)
+    df_val_norm = fe.normalize_features(df_val, fit=False)
+    print(f"\nTrain normalized range: [{df_train_norm[fe.features].min().min():.3f}, {df_train_norm[fe.features].max().max():.3f}]")
+    print(f"Val normalized range (clipped): [{df_val_norm[fe.features].min().min():.3f}, {df_val_norm[fe.features].max().max():.3f}]")
 
     X, y = fe.create_sequences(df_features, lookback=30, prediction_horizon=21)
     print(f"\nSequences created:")

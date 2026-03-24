@@ -4,6 +4,12 @@ Hybrid Prediction Service for Stock ML Trading Dashboard
 
 Combines enhanced mock predictions with real ML models for the best of both worlds.
 Supports all stock categories: tech, sector leaders, ETFs, growth.
+
+v2.0 improvements:
+- MC Dropout uncertainty-based confidence instead of heuristic
+- Proper scaler loading (training-set-only normalization)
+- Ensemble model support
+- Baseline comparison passthrough
 """
 
 import os
@@ -37,7 +43,7 @@ class HybridPredictionService:
         logger.info("Hybrid Prediction Service initialized")
         logger.info(f"   Enhanced Mock: Available")
         logger.info(f"   Vertex AI: {'Available' if self.vertex_service else 'Not available'}")
-        logger.info(f"   Local ML Models: {'Available' if self.local_ml_models else 'Not available'}")
+        logger.info(f"   Local ML Models: {len(self.local_ml_models)} found")
 
     def _init_vertex_ai(self):
         try:
@@ -60,11 +66,12 @@ class HybridPredictionService:
             if os.path.exists(self.models_dir):
                 model_files = [f for f in os.listdir(self.models_dir) if f.endswith('.h5')]
                 for model_file in model_files:
-                    symbol = model_file.replace('_model.h5', '').upper()
+                    symbol = model_file.replace('_model.h5', '').replace('_ensemble_0', '').upper()
                     model_path = os.path.join(self.models_dir, model_file)
-                    self.local_ml_models[symbol] = {
-                        'path': model_path, 'type': 'lstm', 'loaded': False
-                    }
+                    if symbol not in self.local_ml_models:
+                        self.local_ml_models[symbol] = {
+                            'path': model_path, 'type': 'lstm', 'loaded': False
+                        }
                 if self.local_ml_models:
                     logger.info(f"Found {len(self.local_ml_models)} local ML models")
         except Exception as e:
@@ -73,7 +80,7 @@ class HybridPredictionService:
     def get_prediction(self, symbol: str, days_ahead: int = 21) -> Dict:
         """Get prediction using hybrid approach.
 
-        Priority: Vertex AI → Local ML → Enhanced Mock → Basic Mock
+        Priority: Vertex AI -> Local ML (with MC Dropout confidence) -> Enhanced Mock
         """
         logger.info(f"Getting hybrid prediction for {symbol} ({days_ahead} days ahead)")
 
@@ -88,7 +95,7 @@ class HybridPredictionService:
             except Exception as e:
                 logger.warning(f"Vertex AI error for {symbol}: {e}")
 
-        # Try local ML
+        # Try local ML with MC Dropout confidence
         if symbol in self.local_ml_models:
             try:
                 local_prediction = self._predict_with_local_model(symbol, days_ahead)
@@ -99,7 +106,7 @@ class HybridPredictionService:
             except Exception as e:
                 logger.warning(f"Local ML error for {symbol}: {e}")
 
-        # Technical analysis fallback (rule-based, not random)
+        # Technical analysis fallback
         try:
             enhanced_prediction = self.enhanced_service.get_prediction(symbol, days_ahead)
             enhanced_prediction['prediction_source'] = 'technical_analysis'
@@ -117,12 +124,12 @@ class HybridPredictionService:
                 'status': 'unavailable',
                 'prediction_source': 'none',
                 'prediction_type': 'none',
-                'message': 'No trained model available. Run model training first.',
+                'message': 'No prediction source available.',
                 'timestamp': datetime.now().isoformat(),
             }
 
     def _predict_with_local_model(self, symbol: str, days_ahead: int) -> Optional[Dict]:
-        """Load a trained local LSTM model and generate a real prediction."""
+        """Load a trained local LSTM model and generate prediction with MC Dropout."""
         try:
             from ml.lstm_model import StockLSTM, HAS_TENSORFLOW
             if not HAS_TENSORFLOW:
@@ -135,27 +142,42 @@ class HybridPredictionService:
             if not model_info or not os.path.exists(model_info['path']):
                 return None
 
-            # Load model
             fe = FeatureEngineer()
             fetcher = HistoricalDataFetcher()
             df = fetcher.fetch_historical_data(symbol, days=365)
-            if df is None or len(df) < 60:
+            if df is None or len(df) < 100:
                 return None
 
             df_features = fe.calculate_features(df)
-            df_normalized = fe.normalize_features(df_features)
 
-            model = StockLSTM(lookback=30, num_features=len(fe.features),
-                              lstm_units=64, dropout_rate=0.2)
+            # Load training-set scaler to avoid data leakage
+            scaler_params = self.enhanced_service._load_scaler(symbol)
+            if scaler_params:
+                df_normalized = fe.normalize_features(df_features, fit=False, scaler_params=scaler_params)
+            else:
+                df_normalized = fe.normalize_features(df_features, fit=True)
+
+            num_features = len(fe.features)
+            model = StockLSTM(lookback=30, num_features=num_features,
+                              lstm_units=64, dropout_rate=0.2, l2_reg=1e-4)
             model.load_model(model_info['path'])
 
             feature_data = df_normalized[fe.features].values
+            if len(feature_data) < 30:
+                return None
             last_sequence = feature_data[-30:].reshape(1, 30, -1)
-            predicted_return = float(model.predict(last_sequence)[0])
+
+            # MC Dropout for principled uncertainty estimation
+            import numpy as np
+            mean_pred, std_pred = model.predict_with_uncertainty(last_sequence, n_forward_passes=50)
+            predicted_return = float(mean_pred[0])
+            prediction_uncertainty = float(std_pred[0])
 
             current_price = float(df['close'].iloc[-1])
             predicted_price = current_price * (1 + predicted_return)
-            confidence = min(0.95, max(0.1, 1.0 - abs(predicted_return) * 2))
+
+            # Confidence from MC Dropout (lower uncertainty = higher confidence)
+            confidence = float(np.clip(1.0 - prediction_uncertainty * 10, 0.1, 0.95))
 
             return {
                 'symbol': symbol,
@@ -163,6 +185,7 @@ class HybridPredictionService:
                 'predicted_price': predicted_price,
                 'predicted_return': predicted_return,
                 'confidence': confidence,
+                'prediction_uncertainty': prediction_uncertainty,
                 'days_ahead': days_ahead,
                 'status': 'success',
                 'timestamp': datetime.now().isoformat(),
@@ -170,32 +193,6 @@ class HybridPredictionService:
         except Exception as e:
             logger.warning(f"Local ML prediction failed for {symbol}: {e}")
             return None
-
-    def _get_basic_mock_prediction(self, symbol: str, days_ahead: int) -> Dict:
-        import numpy as np
-
-        fallback_prices = {
-            'AAPL': 185.0, 'MSFT': 420.0, 'GOOGL': 175.0, 'AMZN': 185.0,
-            'NVDA': 880.0, 'META': 510.0, 'TSLA': 175.0,
-            'SPY': 520.0, 'QQQ': 450.0,
-            'JPM': 200.0, 'UNH': 530.0, 'XOM': 110.0
-        }
-        current_price = fallback_prices.get(symbol, 100.0)
-
-        np.random.seed(hash(symbol + str(days_ahead)) % 2**32)
-        return_change = np.random.normal(0.03, 0.08)
-        predicted_price = current_price * (1 + return_change)
-
-        return {
-            'symbol': symbol,
-            'current_price': current_price,
-            'predicted_price': predicted_price,
-            'predicted_return': return_change,
-            'confidence': 0.45,
-            'days_ahead': days_ahead,
-            'status': 'success',
-            'timestamp': datetime.now().isoformat(),
-        }
 
     def get_all_predictions(self, symbols: List[str] = None, days_ahead: int = 21) -> Dict[str, Dict]:
         """Get predictions for all symbols."""
@@ -205,7 +202,7 @@ class HybridPredictionService:
         logger.info(f"Getting hybrid predictions for {len(symbols)} symbols")
 
         predictions = {}
-        source_counts = {'real_ml': 0, 'enhanced_mock': 0, 'basic_mock': 0}
+        source_counts = {'real_ml': 0, 'technical_analysis': 0, 'basic_mock': 0}
 
         for symbol in symbols:
             prediction = self.get_prediction(symbol, days_ahead)
@@ -213,7 +210,7 @@ class HybridPredictionService:
             prediction_type = prediction.get('prediction_type', 'basic_mock')
             source_counts[prediction_type] = source_counts.get(prediction_type, 0) + 1
 
-        logger.info(f"Generated {len(predictions)} predictions")
+        logger.info(f"Generated {len(predictions)} predictions: {source_counts}")
         return predictions
 
     def _has_model(self, symbol: str) -> bool:
