@@ -38,6 +38,16 @@ except ImportError:
     StockLSTM = None
     EnsembleStockLSTM = None
 
+try:
+    from .lstm_model_gpu import (
+        StockLSTMGPU, EnsembleStockLSTMGPU, configure_gpu,
+    )
+    HAS_GPU_MODEL = True
+except ImportError:
+    HAS_GPU_MODEL = False
+    StockLSTMGPU = None
+    EnsembleStockLSTMGPU = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -501,6 +511,163 @@ class PredictionService:
 
         successful = sum(1 for r in results.values() if r['status'] == 'success')
         logger.info(f"\nTraining complete: {successful}/{len(self.symbols)} models trained")
+        return results
+
+    # ------------------------------------------------------------------
+    # GPU-optimized training methods
+    # ------------------------------------------------------------------
+
+    def train_model_gpu(
+        self,
+        symbol: str,
+        preset: str = 'gpu',
+        days: int = 730,
+        lookback: int = 60,
+        epochs: int = 300,
+        save_model: bool = True,
+        use_ensemble: bool = False,
+        n_ensemble: int = 5,
+    ) -> Dict:
+        """Train GPU-optimized LSTM model.
+
+        Presets:
+        - 'base':    2-layer LSTM(64), ~6K params — CPU/testing
+        - 'gpu':     3-layer BiLSTM(256) + Attention, ~1.2M params
+        - 'gpu_max': 4-layer BiLSTM(512) + Attention + Conv1D, ~5M params
+
+        Args:
+            symbol: Stock ticker.
+            preset: Model tier ('base', 'gpu', 'gpu_max').
+            days: Days of historical data to fetch.
+            lookback: Lookback window (60 for GPU models, 30 for base).
+            epochs: Max training epochs (early stopping will cut short).
+            save_model: Whether to save trained model to disk.
+            use_ensemble: Train N models and average predictions.
+            n_ensemble: Number of ensemble members.
+        """
+        if not HAS_GPU_MODEL:
+            return {
+                'status': 'error',
+                'message': 'GPU model not available. Check TensorFlow installation.',
+                'symbol': symbol,
+            }
+
+        logger.info(f"GPU Training: {symbol} | preset={preset} | ensemble={use_ensemble}")
+
+        # Configure GPU (mixed precision, memory growth)
+        gpu_info = configure_gpu(memory_growth=True, mixed_precision=(preset != 'base'))
+
+        try:
+            df = self.data_fetcher.fetch_historical_data(symbol, days)
+            if df is None or len(df) < 200:
+                return {'status': 'error', 'message': f'Insufficient data for {symbol}', 'symbol': symbol}
+
+            df_features = self.feature_engineer.calculate_features(df)
+
+            # Split before normalization
+            split_idx = int(len(df_features) * 0.8)
+            df_train = df_features.iloc[:split_idx].copy()
+            df_val = df_features.iloc[split_idx:].copy()
+
+            df_train_norm = self.feature_engineer.normalize_features(df_train, fit=True)
+            df_val_norm = self.feature_engineer.normalize_features(df_val, fit=False)
+
+            X_train, y_train = self.feature_engineer.create_sequences(
+                df_train_norm, lookback=lookback, prediction_horizon=21
+            )
+            X_val, y_val = self.feature_engineer.create_sequences(
+                df_val_norm, lookback=lookback, prediction_horizon=21
+            )
+
+            if len(X_train) < 50 or len(X_val) < 10:
+                return {'status': 'error', 'message': f'Insufficient sequences for {symbol}', 'symbol': symbol}
+
+            num_features = len(self.feature_engineer.features)
+
+            if use_ensemble:
+                ensemble = EnsembleStockLSTMGPU(
+                    n_models=n_ensemble, lookback=lookback,
+                    num_features=num_features, preset=preset,
+                )
+                all_metrics = ensemble.train(X_train, y_train, X_val, y_val, epochs, 0)
+                metrics = all_metrics[-1]
+
+                if save_model:
+                    ensemble.save_models(str(self.models_dir), symbol)
+            else:
+                model = StockLSTMGPU(
+                    lookback=lookback, num_features=num_features, preset=preset,
+                )
+                model.build_model()
+                history = model.train(X_train, y_train, X_val, y_val, epochs, 1)
+                metrics = model.evaluate(X_val, y_val)
+
+                if save_model:
+                    model_path = self.models_dir / f"{symbol}_model.h5"
+                    model.save_model(str(model_path))
+
+            # Save scaler
+            if save_model:
+                scaler_path = self.models_dir / f"{symbol}_scaler.pkl"
+                scaler_info = {
+                    'features': self.feature_engineer.features,
+                    'scaler_params': self.feature_engineer.get_scaler_params(),
+                    'lookback': lookback,
+                    'preset': preset,
+                }
+                with open(scaler_path, 'wb') as f:
+                    pickle.dump(scaler_info, f)
+
+            baselines = self._get_baselines(df, 21)
+
+            return {
+                'status': 'success',
+                'symbol': symbol,
+                'preset': preset,
+                'gpu_info': gpu_info,
+                'training_samples': len(X_train),
+                'validation_samples': len(X_val),
+                'epochs_trained': len(history.history['loss']) if not use_ensemble else epochs,
+                'final_train_loss': history.history['loss'][-1] if not use_ensemble else 0.0,
+                'final_val_loss': history.history['val_loss'][-1] if not use_ensemble else 0.0,
+                'metrics': metrics,
+                'baselines': baselines,
+                'model_saved': save_model,
+                'model_type': f'gpu_ensemble_{n_ensemble}' if use_ensemble else f'gpu_{preset}',
+                'total_params': metrics.get('total_params', 0),
+            }
+
+        except Exception as e:
+            logger.error(f"GPU training error for {symbol}: {e}")
+            return {'status': 'error', 'message': str(e), 'symbol': symbol}
+
+    def train_all_models_gpu(
+        self,
+        preset: str = 'gpu',
+        days: int = 730,
+        lookback: int = 60,
+        epochs: int = 300,
+        use_ensemble: bool = False,
+        n_ensemble: int = 5,
+    ) -> Dict:
+        """Train GPU-optimized models for all tracked stocks."""
+        logger.info(f"GPU Training all {len(self.symbols)} symbols | preset={preset}")
+        results = {}
+        for i, symbol in enumerate(self.symbols):
+            logger.info(f"\n[{i+1}/{len(self.symbols)}] Training {symbol}...")
+            result = self.train_model_gpu(
+                symbol, preset=preset, days=days, lookback=lookback,
+                epochs=epochs, use_ensemble=use_ensemble, n_ensemble=n_ensemble,
+            )
+            results[symbol] = result
+            if result['status'] == 'success':
+                logger.info(
+                    f"  {symbol}: DA={result['metrics']['directional_accuracy']:.1%}, "
+                    f"params={result.get('total_params', 0):,}"
+                )
+
+        successful = sum(1 for r in results.values() if r['status'] == 'success')
+        logger.info(f"\nGPU Training complete: {successful}/{len(self.symbols)} models trained")
         return results
 
     def _get_baselines(self, df: pd.DataFrame, days_ahead: int) -> Dict:

@@ -92,20 +92,37 @@ trading:
 ml:
   model_type: "LSTM"
 
-  # LSTM architecture
+  # Model presets (choose one):
+  #   base:    2-layer LSTM(64), ~6K params — runs on CPU
+  #   gpu:     3-layer BiLSTM(256) + Attention, ~1.2M params — RTX 3060+
+  #   gpu_max: 4-layer BiLSTM(512) + Attention + Conv1D, ~5M params — RTX 4090
+  model_preset: "gpu"
+
+  # LSTM architecture (base preset — overridden by gpu presets)
   lstm:
     layers: 2
     units: 64
     dropout: 0.2
 
+  # GPU architecture (gpu / gpu_max presets)
+  lstm_gpu:
+    layers: 3                  # 4 for gpu_max
+    units: 256                 # 512 for gpu_max
+    dropout: 0.3               # 0.35 for gpu_max
+    bidirectional: true
+    attention_heads: 4         # 8 for gpu_max
+    conv_filters: 0            # 128 for gpu_max
+    mixed_precision: true      # Use float16 on Tensor Cores
+    ensemble_size: 5           # Number of models for ensemble prediction
+
   # Training parameters - Position trading (weeks-months)
   training:
-    lookback_days: 30         # Use 30 days to predict
+    lookback_days: 60          # 60 for GPU models, 30 for base
     prediction_horizon: 21    # Predict 21 trading days ahead (~1 month)
     train_val_split: 0.8      # 80% train, 20% validation
-    batch_size: 32
-    epochs: 150
-    early_stopping_patience: 15
+    batch_size: 256            # 256 for GPU, 512 for gpu_max, 32 for base
+    epochs: 300                # More epochs with cosine annealing + early stopping
+    early_stopping_patience: 25
 
   # Feature engineering
   features:
