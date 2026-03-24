@@ -28,7 +28,7 @@ Usage:
 
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import List, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,8 +37,10 @@ logger = logging.getLogger(__name__)
 class FeatureEngineer:
     """Create features from raw OHLCV stock data for position trading."""
 
-    def __init__(self):
-        self.features = []
+    EXPECTED_FEATURE_COUNT: int = 25
+
+    def __init__(self) -> None:
+        self.features: List[str] = []
 
     def calculate_moving_averages(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate moving averages (10, 20, 50, 200-day)."""

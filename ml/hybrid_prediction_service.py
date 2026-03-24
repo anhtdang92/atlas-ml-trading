@@ -99,18 +99,27 @@ class HybridPredictionService:
             except Exception as e:
                 logger.warning(f"Local ML error for {symbol}: {e}")
 
-        # Enhanced mock prediction
+        # Technical analysis fallback (rule-based, not random)
         try:
             enhanced_prediction = self.enhanced_service.get_prediction(symbol, days_ahead)
-            enhanced_prediction['prediction_source'] = 'enhanced_mock'
-            enhanced_prediction['prediction_type'] = 'enhanced_mock'
+            enhanced_prediction['prediction_source'] = 'technical_analysis'
+            enhanced_prediction['prediction_type'] = 'technical_analysis'
             return enhanced_prediction
         except Exception as e:
-            logger.warning(f"Enhanced mock error for {symbol}: {e}")
-            basic = self._get_basic_mock_prediction(symbol, days_ahead)
-            basic['prediction_source'] = 'basic_mock'
-            basic['prediction_type'] = 'basic_mock'
-            return basic
+            logger.warning(f"Technical analysis error for {symbol}: {e}")
+            return {
+                'symbol': symbol,
+                'current_price': 0.0,
+                'predicted_price': 0.0,
+                'predicted_return': 0.0,
+                'confidence': 0.0,
+                'days_ahead': days_ahead,
+                'status': 'unavailable',
+                'prediction_source': 'none',
+                'prediction_type': 'none',
+                'message': 'No trained model available. Run model training first.',
+                'timestamp': datetime.now().isoformat(),
+            }
 
     def _predict_with_local_model(self, symbol: str, days_ahead: int) -> Optional[Dict]:
         """Load a trained local LSTM model and generate a real prediction."""
