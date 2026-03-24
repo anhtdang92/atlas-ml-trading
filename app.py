@@ -17,7 +17,8 @@ import os
 
 # Import new UI components
 from ui.styles import THEME
-from ui.components import load_css, card_start, card_end, metric_card, section_header, status_badge
+from ui.components import (load_css, card_start, card_end, metric_card, section_header,
+                           status_badge, kpi_box, status_card, job_card, apply_chart_theme)
 
 # Helper functions for cloud progress tracking
 def get_training_job_status():
@@ -291,10 +292,11 @@ def show_portfolio_view():
             values='Value',
             names='Symbol',
             title='',
-            color_discrete_sequence=px.colors.qualitative.Set3,
+            color_discrete_sequence=['#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1'],
             hole=0.4
         )
         fig.update_traces(textposition='inside', textinfo='percent+label', textfont_size=14)
+        apply_chart_theme(fig)
         fig.update_layout(
             height=400, showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
@@ -422,13 +424,12 @@ def show_live_prices():
                 name='Price', line=dict(color=stock_color, width=2)
             )])
 
+        apply_chart_theme(fig, title_color=stock_color)
         fig.update_layout(
             title=f"{stock_name} ({selected_symbol}) Price Chart",
             yaxis_title="Price (USD)", xaxis_title="Date", height=500,
-            template="plotly_dark", xaxis_rangeslider_visible=False,
-            plot_bgcolor='#0e1117', paper_bgcolor='#0e1117',
-            font=dict(color='white'), title_font=dict(size=20, color=stock_color),
-            xaxis=dict(gridcolor='#333'), yaxis=dict(gridcolor='#333')
+            xaxis_rangeslider_visible=False,
+            title_font=dict(size=20),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -436,12 +437,8 @@ def show_live_prices():
         fig_volume = px.bar(df, x='timestamp', y='volume',
                            title=f"{selected_symbol} Trading Volume",
                            labels={'volume': 'Volume', 'timestamp': 'Date'})
-        fig_volume.update_layout(
-            height=200, template="plotly_dark",
-            plot_bgcolor='#0e1117', paper_bgcolor='#0e1117',
-            font=dict(color='white'), title_font=dict(size=16, color=stock_color),
-            xaxis=dict(gridcolor='#333'), yaxis=dict(gridcolor='#333')
-        )
+        apply_chart_theme(fig_volume, title_color=stock_color)
+        fig_volume.update_layout(height=200, title_font=dict(size=16))
         fig_volume.update_traces(marker_color=stock_color)
         st.plotly_chart(fig_volume, use_container_width=True)
 
@@ -927,12 +924,7 @@ def show_predictions():
 
 def show_rebalancing():
     """Display portfolio rebalancing interface."""
-    st.markdown("""
-    <h1 style='color: #4ecdc4; margin: 0 0 20px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 12px; font-size: 32px;'>tune</span>
-        Portfolio Rebalancing
-    </h1>
-    """, unsafe_allow_html=True)
+    section_header("Portfolio Rebalancing", icon="fa-sliders-h")
     
     # Prediction System Selection for Rebalancing
     st.markdown("### ⚙️ Rebalancing Prediction System")
@@ -1000,67 +992,25 @@ def show_rebalancing():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid #4caf50;
-                border-radius: 10px;
-                padding: 15px;
-                text-align: center;
-                margin: 10px 0;
-            ">
-                <div style="font-size: 16px; font-weight: bold; color: #4caf50; margin-bottom: 5px;">
-                    ✅ Enhanced Mock
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Always available fallback
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            status_card("Enhanced Mock",
+                        f'<div style="font-size: 16px; font-weight: bold; color: #4caf50; margin-bottom: 5px;">Active</div>',
+                        "#4caf50", subtitle="Always available fallback")
+
         with col2:
-            vertex_status = "✅ Available" if system_summary['vertex_ai_available'] else "❌ Not Available"
-            vertex_color = "#4caf50" if system_summary['vertex_ai_available'] else "#f44336"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {vertex_color};
-                border-radius: 10px;
-                padding: 15px;
-                text-align: center;
-                margin: 10px 0;
-            ">
-                <div style="font-size: 16px; font-weight: bold; color: {vertex_color}; margin-bottom: 5px;">
-                    {vertex_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Vertex AI ML Models
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            vertex_available = system_summary['vertex_ai_available']
+            vertex_color = THEME['accent_success'] if vertex_available else THEME['accent_danger']
+            vertex_label = "Available" if vertex_available else "Not Available"
+            status_card("Vertex AI ML",
+                        f'<div style="font-size: 16px; font-weight: bold; color: {vertex_color}; margin-bottom: 5px;">{vertex_label}</div>',
+                        vertex_color, subtitle="Cloud ML models")
+
         with col3:
-            local_status = "✅ Available" if system_summary['local_ml_models_available'] else "❌ Not Available"
-            local_color = "#4caf50" if system_summary['local_ml_models_available'] else "#f44336"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {local_color};
-                border-radius: 10px;
-                padding: 15px;
-                text-align: center;
-                margin: 10px 0;
-            ">
-                <div style="font-size: 16px; font-weight: bold; color: {local_color}; margin-bottom: 5px;">
-                    {local_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Local ML Models
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            local_available = system_summary['local_ml_models_available']
+            local_color = THEME['accent_success'] if local_available else THEME['accent_danger']
+            local_label = "Available" if local_available else "Not Available"
+            status_card("Local ML Models",
+                        f'<div style="font-size: 16px; font-weight: bold; color: {local_color}; margin-bottom: 5px;">{local_label}</div>',
+                        local_color, subtitle="Locally trained models")
         
         st.success("🔀 **Using Hybrid System for Rebalancing** - ML-enhanced allocations with automatic fallback!")
     else:
@@ -1215,12 +1165,13 @@ def show_rebalancing():
         ])
         
         fig_current = px.pie(
-            current_df, 
-            values='Weight', 
+            current_df,
+            values='Weight',
             names='Symbol',
             title="Current Portfolio",
-            color_discrete_sequence=px.colors.qualitative.Set3
+            color_discrete_sequence=['#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1']
         )
+        apply_chart_theme(fig_current)
         fig_current.update_layout(height=400)
         st.plotly_chart(fig_current, use_container_width=True)
     
@@ -1232,12 +1183,13 @@ def show_rebalancing():
         ])
         
         fig_target = px.pie(
-            target_df, 
-            values='Weight', 
+            target_df,
+            values='Weight',
             names='Symbol',
             title="Target Portfolio",
-            color_discrete_sequence=px.colors.qualitative.Set3
+            color_discrete_sequence=['#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1']
         )
+        apply_chart_theme(fig_target)
         fig_target.update_layout(height=400)
         st.plotly_chart(fig_target, use_container_width=True)
     
@@ -1264,128 +1216,32 @@ def show_rebalancing():
             hide_index=True
         )
         
-        # Order summary with improved styling
+        # Order summary
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             total_orders = len(summary['orders'])
             order_color = "#ff6b6b" if total_orders > 8 else "#ffa726" if total_orders > 4 else "#4caf50"
             order_status = "Many Trades" if total_orders > 8 else "Moderate" if total_orders > 4 else "Few Trades"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {order_color};
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-                margin: 10px 0;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 28px; font-weight: bold; color: {order_color}; margin-bottom: 10px; text-shadow: 0 0 10px {order_color}40;">
-                    {total_orders}
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                    Total Orders
-                </div>
-                <div style="font-size: 12px; color: {order_color}; margin-bottom: 5px; font-weight: 500;">
-                    {order_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Rebalancing trades needed
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            kpi_box(str(total_orders), "Total Orders", order_color, order_status, "Rebalancing trades needed")
+
         with col2:
             total_fees = summary['metrics']['total_fees']
             fee_color = "#ff6b6b" if total_fees > 100 else "#ffa726" if total_fees > 50 else "#4caf50"
             fee_status = "High Cost" if total_fees > 100 else "Moderate" if total_fees > 50 else "Low Cost"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {fee_color};
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-                margin: 10px 0;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 28px; font-weight: bold; color: {fee_color}; margin-bottom: 10px; text-shadow: 0 0 10px {fee_color}40;">
-                    ${total_fees:.2f}
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                    Total Fees
-                </div>
-                <div style="font-size: 12px; color: {fee_color}; margin-bottom: 5px; font-weight: 500;">
-                    {fee_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Rebalancing cost
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            kpi_box(f"${total_fees:.2f}", "Total Fees", fee_color, fee_status, "Rebalancing cost")
+
         with col3:
             buy_orders = summary['metrics']['buy_orders']
             buy_color = "#4caf50" if buy_orders > 0 else "#666"
             buy_status = "Buying" if buy_orders > 0 else "No Buys"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {buy_color};
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-                margin: 10px 0;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 28px; font-weight: bold; color: {buy_color}; margin-bottom: 10px; text-shadow: 0 0 10px {buy_color}40;">
-                    {buy_orders}
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                    Buy Orders
-                </div>
-                <div style="font-size: 12px; color: {buy_color}; margin-bottom: 5px; font-weight: 500;">
-                    {buy_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Positions to increase
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            kpi_box(str(buy_orders), "Buy Orders", buy_color, buy_status, "Positions to increase")
+
         with col4:
             sell_orders = summary['metrics']['sell_orders']
             sell_color = "#ff6b6b" if sell_orders > 0 else "#666"
             sell_status = "Selling" if sell_orders > 0 else "No Sells"
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                border: 2px solid {sell_color};
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-                margin: 10px 0;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 28px; font-weight: bold; color: {sell_color}; margin-bottom: 10px; text-shadow: 0 0 10px {sell_color}40;">
-                    {sell_orders}
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                    Sell Orders
-                </div>
-                <div style="font-size: 12px; color: {sell_color}; margin-bottom: 5px; font-weight: 500;">
-                    {sell_status}
-                </div>
-                <div style="font-size: 11px; color: #cccccc;">
-                    Positions to decrease
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            kpi_box(str(sell_orders), "Sell Orders", sell_color, sell_status, "Positions to decrease")
         
     else:
         st.success("◉ Portfolio is already balanced - no rebalancing needed!")
@@ -1465,262 +1321,68 @@ def show_rebalancing():
     st.markdown("---")
     st.markdown("### ◉ Portfolio Health Metrics")
     
-    # Create enhanced KPI cards with better styling
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         max_drift = summary['metrics']['max_drift'] * 100
         drift_color = "#ff6b6b" if max_drift > 5 else "#ffa726" if max_drift > 2 else "#4caf50"
         drift_status = "High Risk" if max_drift > 5 else "Moderate" if max_drift > 2 else "Good"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {drift_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {drift_color}; margin-bottom: 10px; text-shadow: 0 0 10px {drift_color}40;">
-                {max_drift:.1f}%
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Max Drift
-            </div>
-            <div style="font-size: 12px; color: {drift_color}; margin-bottom: 5px; font-weight: 500;">
-                {drift_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Largest allocation deviation
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(f"{max_drift:.1f}%", "Max Drift", drift_color, drift_status, "Largest allocation deviation")
+
     with col2:
         avg_drift = summary['metrics']['avg_drift'] * 100
         avg_color = "#ff6b6b" if avg_drift > 3 else "#ffa726" if avg_drift > 1 else "#4caf50"
         avg_status = "High Risk" if avg_drift > 3 else "Moderate" if avg_drift > 1 else "Good"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {avg_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {avg_color}; margin-bottom: 10px; text-shadow: 0 0 10px {avg_color}40;">
-                {avg_drift:.1f}%
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Avg Drift
-            </div>
-            <div style="font-size: 12px; color: {avg_color}; margin-bottom: 5px; font-weight: 500;">
-                {avg_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Average deviation
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(f"{avg_drift:.1f}%", "Avg Drift", avg_color, avg_status, "Average deviation")
+
     with col3:
         total_fees = summary['metrics']['total_fees']
         fee_color = "#ff6b6b" if total_fees > 100 else "#ffa726" if total_fees > 50 else "#4caf50"
         fee_status = "High Cost" if total_fees > 100 else "Moderate" if total_fees > 50 else "Low Cost"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {fee_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {fee_color}; margin-bottom: 10px; text-shadow: 0 0 10px {fee_color}40;">
-                ${total_fees:.2f}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Trading Fees
-            </div>
-            <div style="font-size: 12px; color: {fee_color}; margin-bottom: 5px; font-weight: 500;">
-                {fee_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Total rebalancing cost
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(f"${total_fees:.2f}", "Trading Fees", fee_color, fee_status, "Total rebalancing cost")
+
     with col4:
         fee_percentage = (summary['metrics']['total_fees'] / portfolio_value) * 100
         fee_pct_color = "#ff6b6b" if fee_percentage > 0.5 else "#ffa726" if fee_percentage > 0.2 else "#4caf50"
         fee_pct_status = "High %" if fee_percentage > 0.5 else "Moderate" if fee_percentage > 0.2 else "Low %"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {fee_pct_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {fee_pct_color}; margin-bottom: 10px; text-shadow: 0 0 10px {fee_pct_color}40;">
-                {fee_percentage:.2f}%
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Fee %
-            </div>
-            <div style="font-size: 12px; color: {fee_pct_color}; margin-bottom: 5px; font-weight: 500;">
-                {fee_pct_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Fees vs portfolio value
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        kpi_box(f"{fee_percentage:.2f}%", "Fee %", fee_pct_color, fee_pct_status, "Fees vs portfolio value")
     
-    # Additional metrics row
+    # Rebalancing Summary
     st.markdown("### ◉ Rebalancing Summary")
-    
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         total_orders = len(summary['orders'])
         order_color = "#ff6b6b" if total_orders > 8 else "#ffa726" if total_orders > 4 else "#4caf50"
         order_status = "Many Trades" if total_orders > 8 else "Moderate" if total_orders > 4 else "Few Trades"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {order_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {order_color}; margin-bottom: 10px; text-shadow: 0 0 10px {order_color}40;">
-                {total_orders}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Total Orders
-            </div>
-            <div style="font-size: 12px; color: {order_color}; margin-bottom: 5px; font-weight: 500;">
-                {order_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Rebalancing trades needed
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(str(total_orders), "Total Orders", order_color, order_status, "Rebalancing trades needed")
+
     with col2:
         buy_orders = summary['metrics']['buy_orders']
         buy_color = "#4caf50" if buy_orders > 0 else "#666"
         buy_status = "Buying" if buy_orders > 0 else "No Buys"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {buy_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {buy_color}; margin-bottom: 10px; text-shadow: 0 0 10px {buy_color}40;">
-                {buy_orders}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Buy Orders
-            </div>
-            <div style="font-size: 12px; color: {buy_color}; margin-bottom: 5px; font-weight: 500;">
-                {buy_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Positions to increase
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(str(buy_orders), "Buy Orders", buy_color, buy_status, "Positions to increase")
+
     with col3:
         sell_orders = summary['metrics']['sell_orders']
         sell_color = "#ff6b6b" if sell_orders > 0 else "#666"
         sell_status = "Selling" if sell_orders > 0 else "No Sells"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {sell_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {sell_color}; margin-bottom: 10px; text-shadow: 0 0 10px {sell_color}40;">
-                {sell_orders}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Sell Orders
-            </div>
-            <div style="font-size: 12px; color: {sell_color}; margin-bottom: 5px; font-weight: 500;">
-                {sell_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Positions to decrease
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        kpi_box(str(sell_orders), "Sell Orders", sell_color, sell_status, "Positions to decrease")
+
     with col4:
         # Portfolio health score
         max_drift = summary['metrics']['max_drift'] * 100
         avg_drift = summary['metrics']['avg_drift'] * 100
         fee_pct = (summary['metrics']['total_fees'] / portfolio_value) * 100
-        
-        # Calculate health score (0-100)
-        drift_score = max(0, 100 - (max_drift * 10))  # Penalty for high drift
-        fee_score = max(0, 100 - (fee_pct * 200))     # Penalty for high fees
+
+        drift_score = max(0, 100 - (max_drift * 10))
+        fee_score = max(0, 100 - (fee_pct * 200))
         health_score = (drift_score + fee_score) / 2
-        
+
         health_color = "#4caf50" if health_score > 80 else "#ffa726" if health_score > 60 else "#ff6b6b"
         health_status = "Excellent" if health_score > 80 else "Good" if health_score > 60 else "Needs Attention"
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {health_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 28px; font-weight: bold; color: {health_color}; margin-bottom: 10px; text-shadow: 0 0 10px {health_color}40;">
-                {health_score:.0f}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Health Score
-            </div>
-            <div style="font-size: 12px; color: {health_color}; margin-bottom: 5px; font-weight: 500;">
-                {health_status}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Overall portfolio health
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        kpi_box(f"{health_score:.0f}", "Health Score", health_color, health_status, "Overall portfolio health")
     
     # Drift analysis details
     with st.expander("◉ Detailed Drift Analysis"):
@@ -1747,12 +1409,7 @@ def show_rebalancing():
 
 def show_cloud_progress():
     """Display Google Cloud ML training progress and status."""
-    st.markdown("""
-    <h1 style='color: #4ecdc4; margin: 0 0 20px 0; display: flex; align-items: center;'>
-        <span class='material-symbols-outlined' style='margin-right: 12px; font-size: 32px;'>cloud</span>
-        Cloud Progress Tracker
-    </h1>
-    """, unsafe_allow_html=True)
+    section_header("Cloud Progress Tracker", icon="fa-cloud")
     
     # Auto-refresh toggle
     auto_refresh = st.sidebar.checkbox("🔄 Auto-refresh (30s)", value=True, help="Automatically refresh progress every 30 seconds")
@@ -1765,106 +1422,53 @@ def show_cloud_progress():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        # Training Status
         current_status = get_training_job_status()
-        
         status_info = {
-            "JOB_STATE_PENDING": ("⏳ Pending", "#ffa726", "Training job is starting up"),
-            "JOB_STATE_RUNNING": ("🔄 Running", "#4caf50", "Training is in progress"),
-            "JOB_STATE_SUCCEEDED": ("✅ Completed", "#4caf50", "Training completed successfully"),
-            "JOB_STATE_FAILED": ("❌ Failed", "#f44336", "Training failed"),
-            "NO_JOBS": ("📭 No Jobs", "#666666", "No training jobs found"),
-            "ERROR": ("❓ Error", "#f44336", "Unable to check status")
+            "JOB_STATE_PENDING": ("Pending", THEME['accent_warning'], "Training job is starting up"),
+            "JOB_STATE_RUNNING": ("Running", THEME['accent_success'], "Training is in progress"),
+            "JOB_STATE_SUCCEEDED": ("Completed", THEME['accent_success'], "Training completed successfully"),
+            "JOB_STATE_FAILED": ("Failed", THEME['accent_danger'], "Training failed"),
+            "NO_JOBS": ("No Jobs", "#666666", "No training jobs found"),
+            "ERROR": ("Error", THEME['accent_danger'], "Unable to check status")
         }
-        
-        status_text, status_color, status_desc = status_info.get(current_status, ("❓ Unknown", "#666666", "Unknown status"))
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid {status_color};
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 24px; margin-bottom: 10px;">
-                {status_text}
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                Training Status
-            </div>
-            <div style="font-size: 12px; color: {status_color}; margin-bottom: 5px;">
-                {status_desc}
-            </div>
-            <div style="font-size: 11px; color: #cccccc;">
-                Latest Training Job
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        status_text, status_color, status_desc = status_info.get(current_status, ("Unknown", "#666666", "Unknown status"))
+        kpi_box(status_text, "Training Status", status_color, status_desc, "Latest training job")
+
     with col2:
-        # Cost Tracking
         costs = get_gcp_costs()
         budget_used = costs['total'] / 50 * 100
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid #4ecdc4;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 24px; font-weight: bold; color: #4ecdc4; margin-bottom: 10px;">
-                ${costs['total']:.2f} / $50.00
-            </div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 10px;">
-                Budget Usage
-            </div>
-            <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-bottom: 10px;">
-                <div style="background: #4ecdc4; height: 100%; width: {budget_used:.1f}%; border-radius: 4px;"></div>
-            </div>
-            <div style="font-size: 12px; color: #4ecdc4;">
-                {budget_used:.1f}% used • {3-4 if budget_used < 20 else 2-3 if budget_used < 40 else 1-2} months remaining
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        budget_color = THEME['accent_primary'] if budget_used < 50 else THEME['accent_warning'] if budget_used < 80 else THEME['accent_danger']
+        months_remaining = "3-4" if budget_used < 20 else "2-3" if budget_used < 40 else "1-2"
+        status_card("Budget Usage",
+                     f"""<div style="font-size: 24px; font-weight: bold; color: {THEME['accent_primary']}; margin-bottom: 10px;">
+                         ${costs['total']:.2f} / $50.00
+                     </div>
+                     <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-bottom: 10px;">
+                         <div style="background: {budget_color}; height: 100%; width: {budget_used:.1f}%; border-radius: 4px; box-shadow: 0 0 8px {budget_color}40;"></div>
+                     </div>""",
+                     budget_color,
+                     subtitle=f"{budget_used:.1f}% used - {months_remaining} months remaining")
+
     with col3:
-        # System Health
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid #4caf50;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin: 10px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        ">
-            <div style="font-size: 24px; margin-bottom: 10px;">
-                🏥 System Health
-            </div>
-            <div style="text-align: left; margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span style="color: #cccccc;">BigQuery:</span>
-                    <span style="color: #4caf50;">✅ Connected</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span style="color: #cccccc;">Yahoo Finance:</span>
-                    <span style="color: #4caf50;">✅ Connected</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span style="color: #cccccc;">Vertex AI:</span>
-                    <span style="color: #4caf50;">✅ Active</span>
-                </div>
-            </div>
+        health_html = f"""
+        <div style="font-size: 20px; margin-bottom: 10px; color: {THEME['accent_success']};">
+            <i class="fas fa-heartbeat" style="margin-right: 8px;"></i>Healthy
         </div>
-        """, unsafe_allow_html=True)
+        <div style="text-align: left; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                <span style="color: {THEME['text_secondary']};">BigQuery:</span>
+                <span style="color: {THEME['accent_success']};">Connected</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                <span style="color: {THEME['text_secondary']};">Yahoo Finance:</span>
+                <span style="color: {THEME['accent_success']};">Connected</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                <span style="color: {THEME['text_secondary']};">Vertex AI:</span>
+                <span style="color: {THEME['accent_success']};">Active</span>
+            </div>
+        </div>"""
+        status_card("System Health", health_html, THEME['accent_success'])
     
     # Progress Timeline
     st.markdown("### 📈 Progress Timeline")
@@ -1898,101 +1502,49 @@ def show_cloud_progress():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 🚀 Training Jobs")
+        st.markdown("#### Training Jobs")
+        job_state_colors = {
+            'JOB_STATE_SUCCEEDED': THEME['accent_success'],
+            'JOB_STATE_RUNNING': THEME['accent_warning'],
+            'JOB_STATE_FAILED': THEME['accent_danger'],
+            'JOB_STATE_PENDING': THEME['accent_primary']
+        }
         if training_jobs:
-            for i, job in enumerate(training_jobs[:3]):  # Show top 3
+            for job in training_jobs[:3]:
                 job_name = job.get('displayName', 'Unknown')
                 job_state = job.get('state', 'UNKNOWN')
                 create_time = job.get('createTime', '')
-                
-                # Format time
                 if create_time:
                     try:
-                        from datetime import datetime
                         dt = datetime.fromisoformat(create_time.replace('Z', '+00:00'))
                         time_str = dt.strftime('%m/%d %H:%M')
-                    except:
+                    except Exception:
                         time_str = create_time[:16]
                 else:
                     time_str = 'Unknown'
-                
-                # Status color
-                status_colors = {
-                    'JOB_STATE_SUCCEEDED': '#4caf50',
-                    'JOB_STATE_RUNNING': '#ff9800',
-                    'JOB_STATE_FAILED': '#f44336',
-                    'JOB_STATE_PENDING': '#2196f3'
-                }
-                status_color = status_colors.get(job_state, '#666666')
-                
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                    border-left: 4px solid {status_color};
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin: 10px 0;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                ">
-                    <div style="font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                        {job_name}
-                    </div>
-                    <div style="font-size: 12px; color: {status_color}; margin-bottom: 3px;">
-                        {job_state.replace('JOB_STATE_', '').title()}
-                    </div>
-                    <div style="font-size: 11px; color: #cccccc;">
-                        {time_str}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                color = job_state_colors.get(job_state, '#666666')
+                job_card(job_name, job_state.replace('JOB_STATE_', '').title(), time_str, color)
         else:
             st.info("No training jobs found")
-    
+
     with col2:
-        st.markdown("#### 🎯 Prediction Endpoints")
+        st.markdown("#### Prediction Endpoints")
         if endpoints:
-            for i, endpoint in enumerate(endpoints[:3]):  # Show top 3
+            for endpoint in endpoints[:3]:
                 endpoint_name = endpoint.get('displayName', 'Unknown')
                 endpoint_id = endpoint.get('name', '').split('/')[-1] if endpoint.get('name') else 'Unknown'
                 create_time = endpoint.get('createTime', '')
-                
-                # Format time
                 if create_time:
                     try:
-                        from datetime import datetime
                         dt = datetime.fromisoformat(create_time.replace('Z', '+00:00'))
                         time_str = dt.strftime('%m/%d %H:%M')
-                    except:
+                    except Exception:
                         time_str = create_time[:16]
                 else:
                     time_str = 'Unknown'
-                
-                # Get deployed models count
                 deployed_models = len(endpoint.get('deployedModels', []))
-                
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-                    border-left: 4px solid #4ecdc4;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin: 10px 0;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                ">
-                    <div style="font-weight: bold; color: #ffffff; margin-bottom: 5px;">
-                        {endpoint_name}
-                    </div>
-                    <div style="font-size: 12px; color: #4ecdc4; margin-bottom: 3px;">
-                        ID: {endpoint_id}
-                    </div>
-                    <div style="font-size: 12px; color: #4ecdc4; margin-bottom: 3px;">
-                        Models: {deployed_models}
-                    </div>
-                    <div style="font-size: 11px; color: #cccccc;">
-                        {time_str}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                job_card(endpoint_name, f"ID: {endpoint_id}", time_str,
+                         THEME['accent_primary'], extra_info=f"Models: {deployed_models}")
         else:
             st.info("No endpoints found")
 
@@ -2037,21 +1589,12 @@ def show_cloud_progress():
         }
         
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=progress_data["Epoch"], y=progress_data["Loss"], 
-                                name="Training Loss", line=dict(color="#4ecdc4")))
-        fig.add_trace(go.Scatter(x=progress_data["Epoch"], y=progress_data["Validation Loss"], 
-                                name="Validation Loss", line=dict(color="#ff6b6b")))
-        
-        fig.update_layout(
-            title="Model Training Progress",
-            xaxis_title="Epoch",
-            yaxis_title="Loss",
-            height=300,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
-        
+        fig.add_trace(go.Scatter(x=progress_data["Epoch"], y=progress_data["Loss"],
+                                name="Training Loss", line=dict(color=THEME['accent_primary'], width=2)))
+        fig.add_trace(go.Scatter(x=progress_data["Epoch"], y=progress_data["Validation Loss"],
+                                name="Validation Loss", line=dict(color=THEME['accent_danger'], width=2, dash='dot')))
+        apply_chart_theme(fig)
+        fig.update_layout(title="Model Training Progress", xaxis_title="Epoch", yaxis_title="Loss", height=300)
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -2067,16 +1610,10 @@ def show_cloud_progress():
             labels=cost_data["Service"],
             values=cost_data["Cost"],
             hole=0.3,
-            marker_colors=['#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7']
+            marker_colors=[THEME['accent_primary'], THEME['accent_secondary'], THEME['accent_success'], THEME['accent_warning']]
         )])
-        
-        fig.update_layout(
-            title="Monthly Cost Breakdown",
-            height=300,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
+        apply_chart_theme(fig)
+        fig.update_layout(title="Monthly Cost Breakdown", height=300)
         
         st.plotly_chart(fig, use_container_width=True)
     
