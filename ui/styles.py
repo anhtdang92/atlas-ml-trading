@@ -9,7 +9,7 @@ THEME = {
     'bg_glass': 'rgba(10, 10, 10, 0.5)',
     'text_primary': '#ffffff',
     'text_secondary': '#a0a0a0',
-    'text_muted': '#707070',       # Improved contrast from #505050
+    'text_muted': '#888888',       # WCAG AA contrast on #0a0a0a (was #707070)
     'accent_primary': '#00f3ff',    # Neon Cyan
     'accent_secondary': '#bc13fe',  # Neon Purple
     'accent_success': '#00ff9d',    # Neon Green
@@ -20,6 +20,16 @@ THEME = {
     'glow_primary': 'rgba(0, 243, 255, 0.4)',
     'glow_secondary': 'rgba(188, 19, 254, 0.4)',
 }
+
+# Extended palette for charts with many categories (33 stocks)
+CHART_COLORS = [
+    '#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1',
+    '#ff6b6b', '#c084fc', '#34d399', '#fbbf24', '#f472b6', '#60a5fa',
+    '#a78bfa', '#4ade80', '#fb923c', '#e879f9', '#38bdf8', '#facc15',
+    '#f87171', '#2dd4bf', '#818cf8', '#a3e635', '#fb7185', '#22d3ee',
+    '#d946ef', '#84cc16', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6',
+    '#06b6d4', '#eab308', '#ec4899',
+]
 
 # Standard chart layout for consistent Plotly styling
 CHART_LAYOUT = dict(
@@ -286,6 +296,58 @@ GLOBAL_CSS = f"""
     :focus-visible {{
         outline: 2px solid {THEME['accent_primary']};
         outline-offset: 2px;
+    }}
+
+    /* Reduced motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {{
+        .fade-in, .slide-up, .pulse {{ animation: none !important; }}
+        .glass-card:hover {{ transform: none; }}
+    }}
+
+    /* Skeleton loader placeholder */
+    .skeleton {{
+        background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 8px;
+    }}
+    .skeleton-text {{ height: 16px; margin-bottom: 8px; }}
+    .skeleton-card {{ height: 120px; margin-bottom: 16px; }}
+    .skeleton-chart {{ height: 300px; }}
+
+    /* P&L coloring for tables */
+    .pnl-positive {{ color: {THEME['accent_success']}; font-weight: 600; }}
+    .pnl-negative {{ color: {THEME['accent_danger']}; font-weight: 600; }}
+    .pnl-neutral {{ color: {THEME['text_secondary']}; }}
+
+    /* Confidence bar */
+    .conf-bar {{
+        height: 6px;
+        border-radius: 3px;
+        background: #1a1a1a;
+        overflow: hidden;
+    }}
+    .conf-bar-fill {{
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }}
+
+    /* Responsive: stack columns on small screens */
+    @media (max-width: 768px) {{
+        [data-testid="stHorizontalBlock"] {{
+            flex-direction: column !important;
+        }}
+        [data-testid="stHorizontalBlock"] > div {{
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }}
+    }}
+
+    /* Low-confidence warning pulse */
+    .low-confidence {{
+        border: 1px solid {THEME['accent_danger']};
+        box-shadow: 0 0 8px rgba(255, 0, 85, 0.3);
     }}
 
     </style>

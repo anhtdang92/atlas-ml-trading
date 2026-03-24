@@ -291,38 +291,75 @@ def show_predictions(_stock_api):
                     return_symbol = "→"
 
                 with col:
-                    # Create a container with custom styling
+                    confidence = pred['confidence']
+                    is_mock = pred.get('status') in ('enhanced_mock', 'basic_mock')
+                    is_no_model = pred.get('status') == 'no_model'
+                    low_conf = confidence < 0.6
+
+                    # Confidence bar color
+                    if confidence >= 0.6:
+                        conf_color = THEME['accent_success']
+                    elif confidence >= 0.4:
+                        conf_color = THEME['accent_warning']
+                    else:
+                        conf_color = THEME['accent_danger']
+
+                    # Warning class for low-confidence / mock
+                    warn_style = f"border: 1px solid {THEME['accent_danger']}; box-shadow: 0 0 8px rgba(255,0,85,0.2);" if (low_conf or is_mock) else ""
+
+                    # Source badge
+                    source = pred.get('prediction_source', 'unknown')
+                    if source == 'local_ml':
+                        source_badge = f'<span style="color:{THEME["accent_success"]};font-size:0.7rem;">ML Model</span>'
+                    elif source in ('technical_analysis', 'basic_mock'):
+                        source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">MOCK - Do Not Trade</span>'
+                    elif source == 'none':
+                        source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">No Model</span>'
+                    else:
+                        source_badge = f'<span style="color:{THEME["text_muted"]};font-size:0.7rem;">{source.replace("_"," ").title()}</span>'
+
+                    # Warning banner for mock/no-model
+                    warning_html = ""
+                    if is_mock:
+                        warning_html = f'<div style="background:{THEME["accent_danger"]}15;color:{THEME["accent_danger"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">MOCK DATA - Not a real prediction</div>'
+                    elif is_no_model:
+                        warning_html = f'<div style="background:{THEME["accent_warning"]}15;color:{THEME["accent_warning"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">No trained model - train first</div>'
+
                     st.markdown(f"""
-                    <div class="glass-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0; color: {THEME['text_primary']};">{pred['symbol']} {return_symbol}</h3>
-                            <span class="badge" style="background: {return_color}20; color: {return_color}; border-color: {return_color};">
-                                {pred['confidence']*100:.0f}% CONFIDENCE
-                            </span>
+                    <div class="glass-card" style="{warn_style}">
+                        {warning_html}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h3 style="margin: 0; color: {THEME['text_primary']}; font-size: 1.1rem;">{pred['symbol']} {return_symbol}</h3>
+                            {source_badge}
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <!-- Confidence bar -->
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+                            <span style="font-size: 0.7rem; color: {THEME['text_muted']}; min-width: 28px;">Conf</span>
+                            <div style="flex:1; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden;">
+                                <div style="width:{confidence*100}%; height:100%; background:{conf_color}; border-radius:3px;"></div>
+                            </div>
+                            <span style="color:{conf_color}; font-size:0.8rem; font-weight:600; min-width:35px;">{confidence*100:.0f}%</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
                             <div>
-                                <div style="font-size: 0.8rem; color: {THEME['text_muted']};">CURRENT</div>
-                                <div style="font-size: 1.2rem; font-weight: bold; color: {THEME['text_primary']};">${pred['current_price']:,.2f}</div>
+                                <div style="font-size: 0.75rem; color: {THEME['text_muted']};">CURRENT</div>
+                                <div style="font-size: 1.1rem; font-weight: bold; color: {THEME['text_primary']};">${pred['current_price']:,.2f}</div>
                             </div>
                             <div>
-                                <div style="font-size: 0.8rem; color: {THEME['text_muted']};">PREDICTED</div>
-                                <div style="font-size: 1.2rem; font-weight: bold; color: {THEME['text_primary']};">${pred['predicted_price']:,.2f}</div>
+                                <div style="font-size: 0.75rem; color: {THEME['text_muted']};">PREDICTED</div>
+                                <div style="font-size: 1.1rem; font-weight: bold; color: {THEME['text_primary']};">${pred['predicted_price']:,.2f}</div>
                             </div>
                         </div>
 
-                        <div style="text-align: center; padding: 8px; background: {return_color}10; border-radius: 8px; border: 1px solid {return_color}40;">
+                        <div style="text-align: center; padding: 8px; background: {return_color}10; border-radius: 8px; border: 1px solid {return_color}30;">
                             <span style="color: {return_color}; font-weight: bold; font-size: 1.1rem;">
                                 {pred['predicted_return']*100:+.2f}%
                             </span>
                             <span style="color: {THEME['text_secondary']}; font-size: 0.8rem; margin-left: 5px;">
-                                ({days_ahead}d forecast)
+                                ({days_ahead}d)
                             </span>
-                        </div>
-
-                        <div style="margin-top: 10px; font-size: 0.7rem; color: {THEME['text_muted']}; text-align: right;">
-                            Source: {pred.get('prediction_source', 'unknown').replace('_', ' ').title()}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)

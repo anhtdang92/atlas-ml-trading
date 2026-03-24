@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from ui.styles import CHART_COLORS
 
 from ui.styles import THEME
 from ui.components import section_header, status_card, kpi_box, apply_chart_theme
@@ -255,7 +256,7 @@ def show_rebalancing(_stock_api):
             values='Weight',
             names='Symbol',
             title="Current Portfolio",
-            color_discrete_sequence=['#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1']
+            color_discrete_sequence=CHART_COLORS
         )
         apply_chart_theme(fig_current)
         fig_current.update_layout(height=400)
@@ -273,7 +274,7 @@ def show_rebalancing(_stock_api):
             values='Weight',
             names='Symbol',
             title="Target Portfolio",
-            color_discrete_sequence=['#00f3ff', '#bc13fe', '#00ff9d', '#ffb800', '#ff0055', '#45b7d1']
+            color_discrete_sequence=CHART_COLORS
         )
         apply_chart_theme(fig_target)
         fig_target.update_layout(height=400)
