@@ -192,12 +192,9 @@ class VertexPredictionService:
             
             # Base prices (current market prices)
             base_prices = {
-                'BTC': 121000,
-                'ETH': 4400,
-                'SOL': 225,
-                'ADA': 0.82,
-                'DOT': 4.1,
-                'XRP': 2.8
+                'AAPL': 230, 'MSFT': 430, 'GOOGL': 175, 'AMZN': 200,
+                'NVDA': 140, 'META': 530, 'TSLA': 250, 'JPM': 210,
+                'UNH': 560, 'XOM': 115, 'SPY': 530, 'QQQ': 460,
             }
             
             current_price = base_prices.get(symbol, 100)

@@ -225,7 +225,7 @@ def show_predictions(_stock_api):
                 # Show training results
                 st.success("◉ Training completed!")
 
-                # Display results (results is a dict like {'BTC': {...}, 'ETH': {...}})
+                # Display results (results is a dict like {'AAPL': {...}, 'MSFT': {...}})
                 for symbol, result in results.items():
                     if result['status'] == 'success':
                         st.success(f"◉ {symbol}: {result.get('message', 'Training successful')}")

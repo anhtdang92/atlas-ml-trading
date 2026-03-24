@@ -31,20 +31,17 @@ def predict(request: Dict[str, Any]) -> Dict[str, Any]:
     """
     
     # Extract input data
-    symbol = request.get('symbol', 'BTC')
+    symbol = request.get('symbol', 'AAPL')
     days_ahead = request.get('days_ahead', 7)
-    
+
     # Simulate ML prediction (in reality, this would load a trained model)
     # For now, we'll create a realistic prediction based on current market trends
-    
-    # Base prices (current market prices as of Oct 2024)
+
+    # Base prices (approximate stock prices)
     base_prices = {
-        'BTC': 121000,
-        'ETH': 4400,
-        'SOL': 225,
-        'ADA': 0.82,
-        'DOT': 4.1,
-        'XRP': 2.8
+        'AAPL': 230, 'MSFT': 430, 'GOOGL': 175, 'AMZN': 200,
+        'NVDA': 140, 'META': 530, 'TSLA': 250, 'JPM': 210,
+        'UNH': 560, 'XOM': 115, 'SPY': 530, 'QQQ': 460,
     }
     
     current_price = base_prices.get(symbol, 100)
@@ -87,7 +84,7 @@ def predict(request: Dict[str, Any]) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the prediction function
-    test_request = {"symbol": "BTC", "days_ahead": 7}
+    test_request = {"symbol": "AAPL", "days_ahead": 7}
     result = predict(test_request)
     print(json.dumps(result, indent=2))
 '''

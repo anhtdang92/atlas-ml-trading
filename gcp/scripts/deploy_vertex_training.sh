@@ -9,7 +9,7 @@ PROJECT_ID="${GOOGLE_CLOUD_PROJECT:-stock-ml-trading-487}"
 REGION="us-central1"
 BUCKET_NAME="stock-ml-models-$PROJECT_ID"
 DATASET_ID="stock_data"
-SYMBOLS="BTC,ETH,SOL,ADA"
+SYMBOLS="AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA,SPY"
 
 echo "◈ Deploying Vertex AI training job..."
 
