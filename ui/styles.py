@@ -9,7 +9,7 @@ THEME = {
     'bg_glass': 'rgba(10, 10, 10, 0.5)',
     'text_primary': '#ffffff',
     'text_secondary': '#a0a0a0',
-    'text_muted': '#505050',
+    'text_muted': '#707070',       # Improved contrast from #505050
     'accent_primary': '#00f3ff',    # Neon Cyan
     'accent_secondary': '#bc13fe',  # Neon Purple
     'accent_success': '#00ff9d',    # Neon Green
@@ -20,6 +20,22 @@ THEME = {
     'glow_primary': 'rgba(0, 243, 255, 0.4)',
     'glow_secondary': 'rgba(188, 19, 254, 0.4)',
 }
+
+# Standard chart layout for consistent Plotly styling
+CHART_LAYOUT = dict(
+    template="plotly_dark",
+    plot_bgcolor='rgba(14, 17, 23, 0.8)',
+    paper_bgcolor='rgba(0, 0, 0, 0)',
+    font=dict(color='#e0e0e0', family='Rajdhani, sans-serif'),
+    xaxis=dict(gridcolor='rgba(255,255,255,0.06)', zeroline=False),
+    yaxis=dict(gridcolor='rgba(255,255,255,0.06)', zeroline=False),
+    margin=dict(l=40, r=20, t=50, b=40),
+    legend=dict(
+        bgcolor='rgba(0,0,0,0)',
+        bordercolor='rgba(255,255,255,0.1)',
+        font=dict(size=11),
+    ),
+)
 
 GLOBAL_CSS = f"""
     <style>
@@ -161,27 +177,116 @@ GLOBAL_CSS = f"""
         box-shadow: 0 0 15px {THEME['glow_primary']};
     }}
 
+    /* Animations */
     @keyframes pulse-glow {{
         0% {{ box-shadow: 0 0 5px {THEME['glow_primary']}; }}
         50% {{ box-shadow: 0 0 20px {THEME['glow_primary']}; }}
         100% {{ box-shadow: 0 0 5px {THEME['glow_primary']}; }}
     }}
-
     .pulse {{ animation: pulse-glow 2s infinite; }}
 
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(8px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .fade-in {{ animation: fadeIn 0.4s ease-out forwards; }}
+
+    @keyframes slideUp {{
+        from {{ opacity: 0; transform: translateY(16px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .slide-up {{ animation: slideUp 0.5s ease-out forwards; }}
+
+    @keyframes shimmer {{
+        0% {{ background-position: -200% 0; }}
+        100% {{ background-position: 200% 0; }}
+    }}
+
+    /* Gradient text */
+    .gradient-text {{
+        background: linear-gradient(90deg, {THEME['accent_primary']}, {THEME['accent_secondary']});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }}
+
+    /* Neon text classes */
     .neon-text {{
         color: {THEME['accent_primary']};
         text-shadow: 0 0 10px {THEME['glow_primary']};
     }}
-
     .neon-text-purple {{
         color: {THEME['accent_secondary']};
         text-shadow: 0 0 10px {THEME['glow_secondary']};
     }}
 
+    /* Status text classes */
     .text-success {{ color: {THEME['accent_success']}; }}
     .text-warning {{ color: {THEME['accent_warning']}; }}
     .text-danger {{ color: {THEME['accent_danger']}; }}
+
+    /* KPI box */
+    .kpi-box {{
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        margin: 10px 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }}
+    .kpi-box:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }}
+
+    /* Status card for cloud/system */
+    .status-card {{
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        margin: 10px 0;
+        transition: transform 0.2s ease;
+    }}
+    .status-card:hover {{
+        transform: translateY(-1px);
+    }}
+
+    /* Job/endpoint cards */
+    .job-card {{
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease;
+    }}
+    .job-card:hover {{
+        transform: translateX(4px);
+    }}
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {{
+        width: 6px;
+        height: 6px;
+    }}
+    ::-webkit-scrollbar-track {{
+        background: {THEME['bg_secondary']};
+    }}
+    ::-webkit-scrollbar-thumb {{
+        background: {THEME['accent_primary']}40;
+        border-radius: 3px;
+    }}
+    ::-webkit-scrollbar-thumb:hover {{
+        background: {THEME['accent_primary']}80;
+    }}
+
+    /* Accessible focus styles */
+    :focus-visible {{
+        outline: 2px solid {THEME['accent_primary']};
+        outline-offset: 2px;
+    }}
 
     </style>
 """
