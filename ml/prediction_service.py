@@ -164,12 +164,21 @@ class PredictionService:
         self,
         symbol: str,
         days_ahead: int = 21,
-        use_cache: bool = True
+        use_cache: bool = True,
+        allow_mock: bool = False
     ) -> Dict:
         """Get price prediction for a stock.
 
         Uses MC Dropout for uncertainty estimation when a real model is available.
-        Falls back to enhanced mock predictions when no model exists.
+
+        Args:
+            symbol: Stock ticker symbol.
+            days_ahead: Prediction horizon in trading days.
+            use_cache: Whether to use cached predictions.
+            allow_mock: If False (default), return an explicit 'no_model' status
+                        instead of silently falling back to mock/random predictions.
+                        Set to True only for dashboard display purposes — NEVER for
+                        actual trade decisions.
         """
         logger.info(f"Generating prediction for {symbol} ({days_ahead} days ahead)")
 
@@ -177,15 +186,21 @@ class PredictionService:
             return self._get_vertex_prediction(symbol, days_ahead)
 
         if not HAS_LSTM:
-            return self._create_mock_prediction(symbol, days_ahead)
+            if allow_mock:
+                return self._create_mock_prediction(symbol, days_ahead)
+            return self._no_model_response(symbol, days_ahead, reason="TensorFlow not available")
 
         try:
             if not self._has_model(symbol):
-                return self._create_mock_prediction(symbol, days_ahead)
+                if allow_mock:
+                    return self._create_mock_prediction(symbol, days_ahead)
+                return self._no_model_response(symbol, days_ahead, reason=f"No trained model for {symbol}")
 
             df = self.data_fetcher.fetch_historical_data(symbol, days=365)
             if df is None or len(df) < 100:
-                return self._create_mock_prediction(symbol, days_ahead)
+                if allow_mock:
+                    return self._create_mock_prediction(symbol, days_ahead)
+                return self._no_model_response(symbol, days_ahead, reason=f"Insufficient data for {symbol}")
 
             df_features = self.feature_engineer.calculate_features(df)
 
@@ -200,12 +215,16 @@ class PredictionService:
 
             model = self._load_model(symbol)
             if model is None:
-                return self._create_mock_prediction(symbol, days_ahead)
+                if allow_mock:
+                    return self._create_mock_prediction(symbol, days_ahead)
+                return self._no_model_response(symbol, days_ahead, reason=f"Failed to load model for {symbol}")
 
             lookback = 30
             feature_data = df_normalized[self.feature_engineer.features].values
             if len(feature_data) < lookback:
-                return self._create_mock_prediction(symbol, days_ahead)
+                if allow_mock:
+                    return self._create_mock_prediction(symbol, days_ahead)
+                return self._no_model_response(symbol, days_ahead, reason=f"Insufficient feature data for {symbol}")
             last_sequence = feature_data[-lookback:].reshape(1, lookback, -1)
 
             # MC Dropout for uncertainty-based confidence
@@ -241,17 +260,32 @@ class PredictionService:
 
         except Exception as e:
             logger.error(f"Error generating prediction for {symbol}: {e}")
-            return self._create_mock_prediction(symbol, days_ahead)
+            if allow_mock:
+                return self._create_mock_prediction(symbol, days_ahead)
+            return self._no_model_response(symbol, days_ahead, reason=str(e))
 
-    def get_all_predictions(self, days_ahead: int = 21) -> List[Dict]:
-        """Get predictions for all tracked stocks."""
-        logger.info(f"Generating predictions for {len(self.symbols)} symbols")
+    def get_all_predictions(self, days_ahead: int = 21, allow_mock: bool = False) -> List[Dict]:
+        """Get predictions for all tracked stocks.
+
+        Args:
+            days_ahead: Prediction horizon.
+            allow_mock: If True, fall back to mock predictions for display.
+                        Default False — only return real ML predictions.
+        """
+        logger.info(f"Generating predictions for {len(self.symbols)} symbols (allow_mock={allow_mock})")
         predictions = []
         for symbol in self.symbols:
-            pred = self.get_prediction(symbol, days_ahead)
+            pred = self.get_prediction(symbol, days_ahead, allow_mock=allow_mock)
             predictions.append(pred)
-        predictions.sort(key=lambda x: x['predicted_return'], reverse=True)
-        logger.info(f"Generated {len(predictions)} predictions")
+        predictions.sort(key=lambda x: x.get('predicted_return', 0), reverse=True)
+
+        real_count = sum(1 for p in predictions if p.get('prediction_source') == 'local_ml')
+        mock_count = sum(1 for p in predictions if p.get('status') in ('enhanced_mock', 'basic_mock'))
+        no_model = sum(1 for p in predictions if p.get('status') == 'no_model')
+        logger.info(
+            f"Generated {len(predictions)} predictions: "
+            f"{real_count} real ML, {mock_count} mock, {no_model} no_model"
+        )
         return predictions
 
     def train_model(
@@ -547,7 +581,12 @@ class PredictionService:
             return self._create_mock_prediction(symbol, days_ahead)
 
     def _create_mock_prediction(self, symbol: str, days_ahead: int) -> Dict:
-        """Create enhanced mock prediction using real current price from API."""
+        """Create enhanced mock prediction using real current price from API.
+
+        WARNING: This uses RANDOM pseudo-technical-analysis, NOT real indicators.
+        Only used when allow_mock=True for dashboard display.
+        NEVER use mock predictions for actual trade decisions.
+        """
         try:
             from data.stock_api import StockAPI
             api = StockAPI()
@@ -596,6 +635,7 @@ class PredictionService:
                 'status': 'enhanced_mock',
                 'data_points': 30,
                 'prediction_source': 'technical_analysis',
+                'warning': 'MOCK PREDICTION — uses random pseudo-indicators, not real ML. Do not trade on this.',
                 'technical_analysis': {
                     'rsi': float(rsi),
                     'trend': float(trend),
@@ -607,8 +647,34 @@ class PredictionService:
             logger.warning(f"Enhanced mock failed for {symbol}: {e}")
             return self._create_basic_mock(symbol, days_ahead)
 
+    def _no_model_response(self, symbol: str, days_ahead: int, reason: str = "") -> Dict:
+        """Return an explicit 'no model available' response instead of fake predictions.
+
+        This prevents the system from silently trading on random noise.
+        """
+        return {
+            'symbol': symbol,
+            'current_price': 0.0,
+            'predicted_price': 0.0,
+            'predicted_return': 0.0,
+            'confidence': 0.0,
+            'prediction_date': datetime.now().strftime('%Y-%m-%d'),
+            'model_version': 'none',
+            'features_used': [],
+            'status': 'no_model',
+            'data_points': 0,
+            'prediction_source': 'none',
+            'message': f'No real ML prediction available: {reason}. '
+                       'Train a model first with prediction_service.train_model(). '
+                       'DO NOT trade on mock/random predictions.',
+        }
+
     def _create_basic_mock(self, symbol: str, days_ahead: int) -> Dict:
-        """Ultimate fallback when no price data available."""
+        """Ultimate fallback when no price data available.
+
+        WARNING: This returns RANDOM data. Only used when allow_mock=True
+        for dashboard display. NEVER use for trade decisions.
+        """
         np.random.seed(hash(symbol) % 2**32)
         current_price = 100.0
         predicted_return = np.random.normal(0.03, 0.08)
@@ -626,5 +692,6 @@ class PredictionService:
             'features_used': ['estimated_price'],
             'status': 'basic_mock',
             'data_points': 0,
-            'prediction_source': 'basic_mock'
+            'prediction_source': 'basic_mock',
+            'warning': 'THIS IS RANDOM DATA — not a real prediction. Do not trade on this.'
         }

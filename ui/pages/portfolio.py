@@ -11,14 +11,24 @@ from data.stock_api import get_stock_info
 
 
 def _get_demo_portfolio():
-    """Return demo stock portfolio data."""
+    """Return demo stock portfolio data.
+
+    v2.0: Diversified across tech, financials, defensive staples, bonds, and gold.
+    Removed SPY to avoid mega-cap overlap with individual holdings.
+    Added JNJ (healthcare defensive), KO (consumer staples), TLT (bonds), GLD (gold).
+    """
     return {
-        'AAPL': {'quantity': 25, 'avg_buy_price': 175.00, 'current_price': 185.00},
-        'MSFT': {'quantity': 12, 'avg_buy_price': 380.00, 'current_price': 420.00},
-        'GOOGL': {'quantity': 20, 'avg_buy_price': 155.00, 'current_price': 175.00},
-        'NVDA': {'quantity': 8, 'avg_buy_price': 750.00, 'current_price': 880.00},
-        'SPY': {'quantity': 15, 'avg_buy_price': 490.00, 'current_price': 520.00},
-        'JPM': {'quantity': 18, 'avg_buy_price': 185.00, 'current_price': 200.00},
+        'AAPL': {'quantity': 15, 'avg_buy_price': 175.00, 'current_price': 185.00},
+        'MSFT': {'quantity': 8, 'avg_buy_price': 380.00, 'current_price': 420.00},
+        'NVDA': {'quantity': 5, 'avg_buy_price': 750.00, 'current_price': 880.00},
+        'JPM': {'quantity': 15, 'avg_buy_price': 185.00, 'current_price': 200.00},
+        'JNJ': {'quantity': 20, 'avg_buy_price': 155.00, 'current_price': 162.00},
+        'KO': {'quantity': 40, 'avg_buy_price': 58.00, 'current_price': 62.00},
+        'PG': {'quantity': 15, 'avg_buy_price': 155.00, 'current_price': 165.00},
+        'XOM': {'quantity': 20, 'avg_buy_price': 105.00, 'current_price': 112.00},
+        'TLT': {'quantity': 25, 'avg_buy_price': 92.00, 'current_price': 95.00},
+        'GLD': {'quantity': 12, 'avg_buy_price': 185.00, 'current_price': 198.00},
+        'IWM': {'quantity': 10, 'avg_buy_price': 195.00, 'current_price': 205.00},
     }
 
 

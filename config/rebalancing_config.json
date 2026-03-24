@@ -1,10 +1,38 @@
 {
-  "max_position_weight": 0.15,
+  "max_position_weight": 0.10,
   "min_position_weight": 0.02,
   "min_trade_size": 100.0,
   "trading_fee": 0.0,
-  "ml_weight_factor": 0.3,
+  "ml_weight_factor": 0.05,
   "confidence_threshold": 0.6,
   "rebalancing_schedule": "monthly",
-  "last_rebalancing": null
+  "last_rebalancing": null,
+  "cash_reserve_pct": 0.05,
+  "stop_loss_pct": -0.08,
+  "max_portfolio_drawdown": -0.12,
+  "sector_limits": {
+    "Technology": 0.25,
+    "Financials": 0.15,
+    "Healthcare": 0.15,
+    "Energy": 0.12,
+    "Consumer Staples": 0.15,
+    "Consumer Disc.": 0.10,
+    "Industrials": 0.10,
+    "Utilities": 0.08,
+    "Real Estate": 0.08,
+    "Materials": 0.08,
+    "Cybersecurity": 0.08,
+    "Cloud Data": 0.05,
+    "Fintech": 0.08,
+    "Bond ETF": 0.15,
+    "Commodity ETF": 0.10,
+    "Small Cap ETF": 0.12,
+    "Sector ETF": 0.20
+  },
+  "speculative_caps": {
+    "COIN": 0.02,
+    "PLTR": 0.02,
+    "SNOW": 0.02,
+    "TSLA": 0.05
+  }
 }

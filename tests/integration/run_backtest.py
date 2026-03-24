@@ -21,7 +21,7 @@ class LocalBacktest:
 
     def __init__(self, initial_capital=25000, symbols=None):
         if symbols is None:
-            symbols = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'SPY', 'JPM']
+            symbols = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'JPM', 'JNJ', 'TLT', 'GLD']
         self.initial_capital = initial_capital
         self.cash = initial_capital
         self.symbols = symbols

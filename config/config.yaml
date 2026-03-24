@@ -1,6 +1,8 @@
 # Stock ML Trading Dashboard Configuration
 
 # Stock universe to monitor and trade
+# v2.0: Removed redundant broad index ETFs (SPY/QQQ/DIA) and ARKK.
+# Added defensive consumer staples, bond/gold ETFs, and small-cap value.
 trading:
   # FAANG+ Tech Leaders
   tech_stocks:
@@ -24,25 +26,31 @@ trading:
     - AMT    # Real Estate - American Tower
     - LIN    # Materials - Linde
 
-  # ETFs - Broad Market & Sector
+  # Defensive Consumer Staples (crash protection, stable dividends)
+  defensive_stocks:
+    - JNJ    # Johnson & Johnson - Healthcare
+    - KO     # Coca-Cola - Consumer Staples
+    - PEP    # PepsiCo - Consumer Staples
+    - MCD    # McDonald's - Consumer Staples
+
+  # ETFs - Sector, Small Cap, Bonds, Commodities (no broad index overlap)
   etfs:
-    - SPY    # S&P 500
-    - QQQ    # Nasdaq 100
-    - DIA    # Dow Jones
     - IWM    # Russell 2000 (Small Cap)
+    - IJR    # S&P 600 Small Cap Value
     - XLK    # Technology Sector
     - XLF    # Financial Sector
     - XLE    # Energy Sector
     - XLV    # Healthcare Sector
-    - ARKK   # ARK Innovation (Growth)
+    - TLT    # 20+ Year Treasury Bonds (crash hedge)
+    - GLD    # Gold (inflation hedge, crisis safe haven)
 
-  # Growth Stocks
+  # Growth Stocks (speculative - capped at 2% each except CRWD/SQ)
   growth_stocks:
-    - PLTR   # Palantir
+    - PLTR   # Palantir (capped 2%)
     - CRWD   # CrowdStrike
-    - SNOW   # Snowflake
+    - SNOW   # Snowflake (capped 2%)
     - SQ     # Block (Square)
-    - COIN   # Coinbase
+    - COIN   # Coinbase (capped 2%)
 
   # Rebalancing schedule
   rebalance_day: "Friday"       # End of trading week
@@ -53,10 +61,29 @@ trading:
   initial_capital: 25000.0  # USD
 
   # Risk management
-  max_position_size: 0.15    # 15% max per stock
+  max_position_size: 0.10    # 10% max per stock (reduced from 15%)
   min_position_size: 0.02    # 2% min per stock
   min_trade_amount: 100.0    # Minimum $100 per trade
   max_single_trade: 5000.0   # Maximum $5000 per trade
+  cash_reserve_pct: 0.05     # Hold 5% cash reserve at all times
+
+  # Position-level stop-loss
+  stop_loss_pct: -0.08       # Sell if individual position drops 8%
+
+  # Portfolio-level drawdown circuit breaker
+  max_portfolio_drawdown: -0.12  # Halt all trading if portfolio drops 12% from peak
+
+  # Sector exposure limits (prevent overconcentration)
+  sector_limits:
+    Technology: 0.25           # Max 25% in tech (AAPL+MSFT+GOOGL+AMZN+NVDA+META+TSLA+PLTR+CRWD+SNOW)
+    Financials: 0.15
+    Healthcare: 0.15
+    Energy: 0.12
+    Consumer Staples: 0.15
+    Industrials: 0.10
+    Utilities: 0.08
+    Real Estate: 0.08
+    Materials: 0.08
 
   # Trading mode
   paper_trading: true  # Set to false for live trading (BE CAREFUL!)

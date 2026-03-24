@@ -41,7 +41,8 @@ def predict(request: Dict[str, Any]) -> Dict[str, Any]:
     base_prices = {
         'AAPL': 230, 'MSFT': 430, 'GOOGL': 175, 'AMZN': 200,
         'NVDA': 140, 'META': 530, 'TSLA': 250, 'JPM': 210,
-        'UNH': 560, 'XOM': 115, 'SPY': 530, 'QQQ': 460,
+        'UNH': 560, 'XOM': 115, 'JNJ': 162, 'KO': 62,
+        'PEP': 175, 'MCD': 295, 'TLT': 95, 'GLD': 198,
     }
     
     current_price = base_prices.get(symbol, 100)

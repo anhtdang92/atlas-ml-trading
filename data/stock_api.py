@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 # Stock universe organized by category
+# v2.0: Removed redundant broad index ETFs (SPY/QQQ/DIA) that overlap with
+# individual holdings. Added defensive consumer staples (JNJ, KO, PEP, MCD),
+# bond ETF (TLT), gold ETF (GLD), and small-cap value ETF (IJR) for true
+# diversification and crash protection. Removed ARKK due to growth stock overlap.
 STOCK_UNIVERSE = {
     'tech': {
         'AAPL': {'name': 'Apple', 'sector': 'Technology', 'color': '#A2AAAD'},
@@ -44,16 +48,21 @@ STOCK_UNIVERSE = {
         'AMT': {'name': 'American Tower', 'sector': 'Real Estate', 'color': '#00529B'},
         'LIN': {'name': 'Linde', 'sector': 'Materials', 'color': '#004F9F'},
     },
+    'defensive': {
+        'JNJ': {'name': 'Johnson & Johnson', 'sector': 'Healthcare', 'color': '#D51900'},
+        'KO': {'name': 'Coca-Cola', 'sector': 'Consumer Staples', 'color': '#F40009'},
+        'PEP': {'name': 'PepsiCo', 'sector': 'Consumer Staples', 'color': '#004B93'},
+        'MCD': {'name': "McDonald's", 'sector': 'Consumer Staples', 'color': '#FFC72C'},
+    },
     'etfs': {
-        'SPY': {'name': 'S&P 500 ETF', 'sector': 'Index ETF', 'color': '#1f77b4'},
-        'QQQ': {'name': 'Nasdaq 100 ETF', 'sector': 'Index ETF', 'color': '#ff7f0e'},
-        'DIA': {'name': 'Dow Jones ETF', 'sector': 'Index ETF', 'color': '#2ca02c'},
         'IWM': {'name': 'Russell 2000 ETF', 'sector': 'Small Cap ETF', 'color': '#d62728'},
+        'IJR': {'name': 'S&P 600 Small Cap Value', 'sector': 'Small Cap ETF', 'color': '#17becf'},
         'XLK': {'name': 'Tech Sector ETF', 'sector': 'Sector ETF', 'color': '#9467bd'},
         'XLF': {'name': 'Financial Sector ETF', 'sector': 'Sector ETF', 'color': '#8c564b'},
         'XLE': {'name': 'Energy Sector ETF', 'sector': 'Sector ETF', 'color': '#e377c2'},
         'XLV': {'name': 'Healthcare Sector ETF', 'sector': 'Sector ETF', 'color': '#7f7f7f'},
-        'ARKK': {'name': 'ARK Innovation ETF', 'sector': 'Growth ETF', 'color': '#bcbd22'},
+        'TLT': {'name': '20+ Year Treasury Bond ETF', 'sector': 'Bond ETF', 'color': '#1f77b4'},
+        'GLD': {'name': 'SPDR Gold Shares', 'sector': 'Commodity ETF', 'color': '#FFD700'},
     },
     'growth': {
         'PLTR': {'name': 'Palantir', 'sector': 'Technology', 'color': '#101010'},
@@ -62,6 +71,22 @@ STOCK_UNIVERSE = {
         'SQ': {'name': 'Block', 'sector': 'Fintech', 'color': '#006AFF'},
         'COIN': {'name': 'Coinbase', 'sector': 'Fintech', 'color': '#0052FF'},
     }
+}
+
+# Sector mapping for sector exposure limits in the rebalancer.
+# Maps each symbol to its broad sector bucket for concentration checks.
+SECTOR_MAP = {}
+for _cat, _stocks in STOCK_UNIVERSE.items():
+    for _sym, _info in _stocks.items():
+        SECTOR_MAP[_sym] = _info['sector']
+
+# Maximum weight caps for high-risk / speculative symbols.
+# The rebalancer should enforce these in addition to the global max position cap.
+SPECULATIVE_CAPS = {
+    'COIN': 0.02,   # Crypto proxy, extreme volatility
+    'PLTR': 0.02,   # Binary government contract risk
+    'SNOW': 0.02,   # High-multiple cloud, valuation-sensitive
+    'TSLA': 0.05,   # High beta, meme-stock dynamics
 }
 
 

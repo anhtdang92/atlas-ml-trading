@@ -36,12 +36,15 @@ app.py (Streamlit Dashboard)
 4. **Rebalancing** - ML-enhanced portfolio allocation with paper/live trading
 5. **Cloud Progress** - Training job monitoring, cost tracking, endpoint status
 
-## Stock Universe (~30 stocks)
+## Stock Universe (~33 stocks)
 
 - **Tech (FAANG+):** AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
 - **Sector Leaders:** JPM, UNH, XOM, CAT, PG, HD, NEE, AMT, LIN
-- **ETFs:** SPY, QQQ, DIA, IWM, XLK, XLF, XLE, XLV, ARKK
-- **Growth:** PLTR, CRWD, SNOW, SQ, COIN
+- **Defensive:** JNJ, KO, PEP, MCD (consumer staples / healthcare for crash protection)
+- **ETFs:** IWM, IJR, XLK, XLF, XLE, XLV, TLT (bonds), GLD (gold)
+- **Growth:** PLTR, CRWD, SNOW, SQ, COIN (speculative — capped at 2% each)
+
+*Removed SPY/QQQ/DIA (redundant with individual holdings) and ARKK (overlaps growth picks).*
 
 ## ML Pipeline
 
@@ -49,7 +52,8 @@ app.py (Streamlit Dashboard)
 - **Features:** 25 technical indicators (MAs, RSI, MACD, Bollinger Bands, volume, momentum, volatility, ATR)
 - **Input:** 30-day lookback windows of OHLCV data + indicators
 - **Output:** Predicted 21-day return percentage per symbol (position trading)
-- **Hybrid system:** Vertex AI → Local ML → Enhanced Mock → Basic Mock (fallback chain)
+- **Hybrid system:** Vertex AI → Local ML → Explicit failure (no silent mock fallback)
+- **Mock predictions:** Disabled by default (`allow_mock=False`). Only enabled for dashboard display, NEVER for trade decisions.
 - **Key files:** `ml/lstm_model.py`, `ml/feature_engineering.py`, `ml/prediction_service.py`, `ml/hybrid_prediction_service.py`
 
 ## Data Layer
@@ -77,9 +81,15 @@ app.py (Streamlit Dashboard)
 
 ## Risk Controls
 
-- Max position: 15%, Min position: 2%
+- Max position: 10% (reduced from 15%), Min position: 2%
+- Speculative caps: COIN/PLTR/SNOW at 2%, TSLA at 5%
+- Sector limits: Tech max 25%, Financials/Healthcare/Consumer Staples max 15%, etc.
+- Cash reserve: 5% always held uninvested
+- Position stop-loss: 8% (auto-sell if individual position drops 8%)
+- Portfolio drawdown circuit breaker: 12% (halt all trading if portfolio drops 12% from peak)
 - Minimum trade size: $100
-- ML weight factor: 0.3 (how much predictions affect allocation)
+- ML weight factor: 0.05 (reduced from 0.3 — until LSTM model is validated via walk-forward)
+- Mock predictions disabled by default — system fails loudly if no trained model exists
 - Confidence threshold: 0.6
 - Paper trading mode enabled by default
 - Zero-commission trading (most modern brokers)
