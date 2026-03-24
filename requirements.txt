@@ -6,7 +6,8 @@ numpy==1.26.4
 
 # Machine Learning
 # tensorflow==2.15.0  # Uncomment for real ML training (requires Python 3.9-3.11)
-# scikit-learn==1.5.2 # Uncomment for real ML training
+scikit-learn==1.5.2
+# xgboost==2.0.3     # Optional: uncomment for XGBoost baseline comparison
 
 # Google Cloud Platform
 google-cloud-aiplatform==1.74.0
@@ -39,3 +40,9 @@ black==24.10.0
 # Jupyter (for experimentation)
 jupyter==1.1.1
 ipykernel==6.29.5
+
+# Data Validation
+pandera==0.20.4
+
+# Experiment Tracking (optional)
+# mlflow==2.16.0     # Uncomment for MLflow experiment tracking

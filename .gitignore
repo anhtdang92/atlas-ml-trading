@@ -63,7 +63,8 @@ data/*.json
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+# Track notebooks in notebooks/ directory (analysis artifacts)
+# *.ipynb
 
 # Coverage
 htmlcov/

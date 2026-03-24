@@ -238,8 +238,6 @@ class StockLSTM:
         logger.info(f"Model loaded from {filepath}")
 
 
-# Keep backward compatibility alias
-CryptoLSTM = StockLSTM
 
 
 def main():
