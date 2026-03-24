@@ -30,7 +30,7 @@ RUN mkdir -p /app/outputs/models /app/outputs/logs
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV GOOGLE_CLOUD_PROJECT=crypto-ml-trading-487
+ENV GOOGLE_CLOUD_PROJECT=stock-ml-trading-487
 
 # Default command
 CMD ["python", "gcp/training/vertex_training_job.py"]

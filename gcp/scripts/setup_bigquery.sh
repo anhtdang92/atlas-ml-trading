@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="stock-ml-trading-487"
+PROJECT_ID="${GOOGLE_CLOUD_PROJECT:-stock-ml-trading-487}"
 DATASET_ID="stock_data"
 
 echo "◈ Setting up BigQuery for project: $PROJECT_ID"

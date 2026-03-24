@@ -106,6 +106,64 @@ class StockAPI:
         """Get yfinance Ticker object."""
         return yf.Ticker(symbol)
 
+    def _is_cache_valid(self, cache_key: str) -> bool:
+        """Check if a cache entry exists and has not expired."""
+        if cache_key not in self._cache:
+            return False
+        if cache_key not in self._cache_time:
+            return False
+        elapsed = time.time() - self._cache_time[cache_key]
+        return elapsed < self._cache_ttl
+
+    def _get_cached(self, cache_key: str) -> Any:
+        """Return cached value if valid, otherwise None sentinel."""
+        if self._is_cache_valid(cache_key):
+            logger.debug(f"Cache hit for '{cache_key}'")
+            return self._cache[cache_key]
+        logger.debug(f"Cache miss for '{cache_key}'")
+        return None
+
+    def _set_cached(self, cache_key: str, value: Any) -> None:
+        """Store a value in the cache with the current timestamp."""
+        self._cache[cache_key] = value
+        self._cache_time[cache_key] = time.time()
+
+    def _fetch_with_retry(self, func, description: str = "yfinance call",
+                          max_retries: int = 3, initial_backoff: float = 1.0):
+        """Execute a callable with retry and exponential backoff.
+
+        Args:
+            func: Zero-argument callable that performs the yfinance fetch.
+            description: Human-readable label for log messages.
+            max_retries: Maximum number of attempts (default 3).
+            initial_backoff: Seconds to wait after the first failure (doubles each retry).
+
+        Returns:
+            The return value of *func* on success.
+
+        Raises:
+            The last exception if all retries are exhausted.
+        """
+        backoff = initial_backoff
+        last_exception = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                return func()
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries:
+                    logger.warning(
+                        f"{description}: attempt {attempt}/{max_retries} failed "
+                        f"({e}), retrying in {backoff:.1f}s"
+                    )
+                    time.sleep(backoff)
+                    backoff *= 2
+                else:
+                    logger.error(
+                        f"{description}: all {max_retries} attempts failed ({e})"
+                    )
+        raise last_exception
+
     def get_current_price(self, symbol: str) -> Optional[float]:
         """Get current/latest price for a stock.
 
@@ -115,11 +173,21 @@ class StockAPI:
         Returns:
             Current price as float, or None on error
         """
+        cache_key = f"price:{symbol}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         try:
             ticker = self._get_ticker(symbol)
-            hist = ticker.history(period='1d')
+            hist = self._fetch_with_retry(
+                lambda: ticker.history(period='1d'),
+                description=f"get_current_price({symbol})"
+            )
             if not hist.empty:
-                return float(hist['Close'].iloc[-1])
+                price = float(hist['Close'].iloc[-1])
+                self._set_cached(cache_key, price)
+                return price
             return None
         except Exception as e:
             logger.error(f"Error fetching price for {symbol}: {e}")
@@ -134,9 +202,17 @@ class StockAPI:
         Returns:
             Dictionary with current, open, high, low, volume, change_pct
         """
+        cache_key = f"quote:{symbol}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         try:
             ticker = self._get_ticker(symbol)
-            hist = ticker.history(period='5d')
+            hist = self._fetch_with_retry(
+                lambda: ticker.history(period='5d'),
+                description=f"get_quote({symbol})"
+            )
 
             if hist.empty or len(hist) < 1:
                 return None
@@ -150,7 +226,7 @@ class StockAPI:
             prev_close = float(hist['Close'].iloc[-2]) if len(hist) > 1 else open_price
             change_pct = ((current - prev_close) / prev_close) * 100 if prev_close else 0
 
-            return {
+            quote = {
                 'current': current,
                 'open': open_price,
                 'high': high,
@@ -159,6 +235,8 @@ class StockAPI:
                 'prev_close': prev_close,
                 'change_pct': change_pct
             }
+            self._set_cached(cache_key, quote)
+            return quote
         except Exception as e:
             logger.error(f"Error fetching quote for {symbol}: {e}")
             return None
@@ -173,13 +251,27 @@ class StockAPI:
             Dictionary mapping symbols to quote data
         """
         results = {}
+
+        # Check cache first; collect symbols that still need fetching
+        uncached_symbols = []
+        for symbol in symbols:
+            cache_key = f"quote:{symbol}"
+            cached = self._get_cached(cache_key)
+            if cached is not None:
+                results[symbol] = cached
+            else:
+                uncached_symbols.append(symbol)
+
+        if not uncached_symbols:
+            return results
+
         try:
             # yfinance supports batch downloads
-            data = yf.download(symbols, period='5d', group_by='ticker', progress=False)
+            data = yf.download(uncached_symbols, period='5d', group_by='ticker', progress=False)
 
-            for symbol in symbols:
+            for symbol in uncached_symbols:
                 try:
-                    if len(symbols) == 1:
+                    if len(uncached_symbols) == 1:
                         df = data
                     else:
                         df = data[symbol]
@@ -195,7 +287,7 @@ class StockAPI:
                     prev_close = float(df['Close'].iloc[-2]) if len(df) > 1 else open_price
                     change_pct = ((current - prev_close) / prev_close) * 100 if prev_close else 0
 
-                    results[symbol] = {
+                    quote = {
                         'current': current,
                         'open': open_price,
                         'high': high,
@@ -204,13 +296,15 @@ class StockAPI:
                         'prev_close': prev_close,
                         'change_pct': change_pct
                     }
+                    results[symbol] = quote
+                    self._set_cached(f"quote:{symbol}", quote)
                 except Exception:
                     continue
 
         except Exception as e:
             logger.error(f"Error in batch quote fetch: {e}")
             # Fallback to individual fetches
-            for symbol in symbols:
+            for symbol in uncached_symbols:
                 quote = self.get_quote(symbol)
                 if quote:
                     results[symbol] = quote
@@ -235,7 +329,10 @@ class StockAPI:
         """
         try:
             ticker = self._get_ticker(symbol)
-            df = ticker.history(period=period, interval=interval)
+            df = self._fetch_with_retry(
+                lambda: ticker.history(period=period, interval=interval),
+                description=f"get_historical_data({symbol}, {period}, {interval})"
+            )
 
             if df.empty:
                 logger.warning(f"No data returned for {symbol}")

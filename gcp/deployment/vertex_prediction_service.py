@@ -71,7 +71,7 @@ class VertexPredictionService:
         
         # Add technical indicators
         feature_engineer = FeatureEngineer()
-        df_with_features = feature_engineer.add_all_features(df)
+        df_with_features = feature_engineer.calculate_features(df)
         
         # Select feature columns
         feature_columns = [

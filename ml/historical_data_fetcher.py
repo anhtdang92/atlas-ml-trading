@@ -121,7 +121,8 @@ class HistoricalDataFetcher:
 
         if df.isnull().any().any():
             logger.warning(f"Missing values found in {symbol} data, forward filling")
-            df.ffill(inplace=True)
+            filled = df.ffill()
+            df.loc[:] = filled
 
         if (df[['open', 'high', 'low', 'close']] < 0).any().any():
             logger.error(f"Negative prices found in {symbol}")
@@ -129,7 +130,9 @@ class HistoricalDataFetcher:
 
         if (df[['open', 'high', 'low', 'close']] == 0).any().any():
             logger.warning(f"Zero prices found in {symbol}")
-            df = df[df['close'] > 0]
+            mask = df['close'] > 0
+            rows_to_drop = df.index[~mask]
+            df.drop(rows_to_drop, inplace=True)
 
         if not df['timestamp'].is_monotonic_increasing:
             logger.warning("Data not in chronological order, sorting...")

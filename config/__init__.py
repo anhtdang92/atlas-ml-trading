@@ -1,0 +1,1 @@
+"""ATLAS configuration management."""

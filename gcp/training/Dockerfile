@@ -23,7 +23,7 @@ COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV GOOGLE_CLOUD_PROJECT=crypto-ml-trading-487
+ENV GOOGLE_CLOUD_PROJECT=stock-ml-trading-487
 ENV GOOGLE_APPLICATION_CREDENTIALS=/app/config/keys/ml-training-sa-key.json
 
 # Create directories for outputs
