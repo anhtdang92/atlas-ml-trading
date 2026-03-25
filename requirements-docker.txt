@@ -1,0 +1,12 @@
+# Lightweight dependencies for Docker dashboard (no GCP/TensorFlow)
+yfinance==0.2.46
+streamlit==1.41.1
+pandas==2.2.3
+numpy==1.26.4
+scikit-learn==1.5.2
+plotly==5.24.1
+matplotlib==3.9.3
+requests==2.32.3
+pyyaml==6.0.2
+python-dotenv==1.0.1
+pandera==0.20.4

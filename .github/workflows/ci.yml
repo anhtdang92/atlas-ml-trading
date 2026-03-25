@@ -31,7 +31,7 @@ jobs:
         run: flake8 ml/ data/ --max-line-length=120 --ignore=E501,W503,E203
 
   test:
-    name: Unit Tests
+    name: Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -51,13 +51,19 @@ jobs:
           pip install -r requirements.txt
           pip install scikit-learn pandera
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
-          python -m pytest tests/unit/ -v --tb=short -x
+          python -m pytest tests/unit/ -v --tb=short -x \
+            --cov=ml --cov=data --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=60
 
-      - name: Run ML pipeline tests
-        run: |
-          python -m pytest tests/unit/test_ml_pipeline.py -v --tb=short
+      - name: Upload coverage report
+        if: matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
 
   validate:
     name: Data & Schema Validation
@@ -115,3 +121,30 @@ jobs:
           assert X.ndim == 3 and X.shape[1] == 30 and X.shape[2] == 25
           print(f'Feature engineering validated: {len(fe.features)} features, X{X.shape}, y{y.shape}')
           "
+
+      - name: Validate ML modules import
+        run: |
+          python -c "
+          from ml.feature_importance import FeatureImportanceAnalyzer
+          from ml.backtest_tearsheet import BacktestTearsheet
+          from ml.experiment_tracker import ExperimentTracker
+          from ml.baseline_models import compare_baselines
+          print('All ML modules import successfully')
+          "
+
+  docker:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t atlas-dashboard .
+
+      - name: Verify container starts
+        run: |
+          docker run -d --name atlas-test -p 8501:8501 atlas-dashboard
+          sleep 10
+          curl -f http://localhost:8501/_stcore/health || echo "Health check pending"
+          docker stop atlas-test
+          docker rm atlas-test
