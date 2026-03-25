@@ -58,7 +58,7 @@ class HybridPredictionService:
             if VertexPredictionService is None:
                 return
 
-            project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'stock-ml-trading-487')
+            project_id = os.getenv('GOOGLE_CLOUD_PROJECT', '')
             region = os.getenv('GCP_REGION', 'us-central1')
             endpoint_id = os.getenv('VERTEX_ENDPOINT_ID', '')
 

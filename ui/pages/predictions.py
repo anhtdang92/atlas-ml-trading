@@ -18,7 +18,11 @@ def _get_training_job_status():
     """
     try:
         from google.cloud import aiplatform
-        aiplatform.init(project="stock-ml-trading-487", location="us-central1")
+        import os
+        project_id = os.getenv('GOOGLE_CLOUD_PROJECT', '')
+        if not project_id:
+            return "NO_JOBS"
+        aiplatform.init(project=project_id, location="us-central1")
         jobs = aiplatform.CustomJob.list(
             filter='state!="JOB_STATE_CANCELLED"',
             order_by="create_time desc",

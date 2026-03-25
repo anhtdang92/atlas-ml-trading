@@ -40,9 +40,9 @@ logger = logging.getLogger(__name__)
 class HistoricalDataFetcher:
     """Fetch and store historical stock data."""
 
-    def __init__(self, project_id: str = 'stock-ml-trading-487',
+    def __init__(self, project_id: str = None,
                  dataset: str = 'stock_data'):
-        self.project_id = project_id
+        self.project_id = project_id or os.getenv('GOOGLE_CLOUD_PROJECT', '')
         self.dataset = dataset
         self.stock_api = StockAPI()
 

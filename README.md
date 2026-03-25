@@ -411,7 +411,7 @@ python tests/unit/test_gcp.py
 - [x] CI/CD with GitHub Actions (lint, test, coverage, Docker)
 - [x] Docker Compose one-command setup
 - [x] Model evaluation notebook (12 sections)
-- [ ] Automated trading via Alpaca API
+- [x] Alpaca paper trading integration (REST API, risk validation)
 - [ ] Multi-timeframe analysis
 - [ ] Earnings calendar integration
 - [ ] Options strategy overlay
