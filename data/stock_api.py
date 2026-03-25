@@ -9,6 +9,7 @@ import time
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -90,6 +91,38 @@ SPECULATIVE_CAPS = {
 }
 
 
+def _get_cache_ttl() -> int:
+    """Return an appropriate cache TTL in seconds based on US market hours.
+
+    - 60s during regular market hours (9:30 AM - 4:00 PM ET, weekdays)
+    - 300s during pre/post market (4:00 AM - 9:30 AM and 4:00 PM - 8:00 PM ET, weekdays)
+    - 3600s when market is closed (nights, weekends)
+
+    Note: US market holidays (e.g. MLK Day, Thanksgiving) are not covered;
+    the function will return regular-hours TTL on those days.
+    """
+    et = ZoneInfo("America/New_York")
+    now = datetime.now(tz=et)
+
+    # Weekends: market fully closed
+    if now.weekday() >= 5:
+        return 3600
+
+    hour_min = now.hour * 60 + now.minute  # minutes since midnight
+
+    market_open = 9 * 60 + 30   # 09:30
+    market_close = 16 * 60      # 16:00
+    pre_market_start = 4 * 60   # 04:00
+    post_market_end = 20 * 60   # 20:00
+
+    if market_open <= hour_min < market_close:
+        return 60
+    elif pre_market_start <= hour_min < market_open or market_close <= hour_min < post_market_end:
+        return 300
+    else:
+        return 3600
+
+
 def get_all_symbols() -> List[str]:
     """Get flat list of all tracked stock symbols."""
     symbols = []
@@ -125,7 +158,6 @@ class StockAPI:
             raise ImportError("yfinance is required. Install with: pip install yfinance")
         self._cache = {}
         self._cache_time = {}
-        self._cache_ttl = 60  # seconds
 
     def _get_ticker(self, symbol: str) -> Any:
         """Get yfinance Ticker object."""
@@ -138,7 +170,7 @@ class StockAPI:
         if cache_key not in self._cache_time:
             return False
         elapsed = time.time() - self._cache_time[cache_key]
-        return elapsed < self._cache_ttl
+        return elapsed < _get_cache_ttl()
 
     def _get_cached(self, cache_key: str) -> Any:
         """Return cached value if valid, otherwise None sentinel."""

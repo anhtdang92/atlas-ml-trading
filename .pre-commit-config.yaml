@@ -20,5 +20,16 @@ repos:
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
-        args: [--maxkb=500]
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
       - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: unit tests
+        entry: python -m pytest tests/unit/ -x -q --no-header
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

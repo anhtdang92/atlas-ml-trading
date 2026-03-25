@@ -191,21 +191,6 @@ def main():
     # Set the current page for the rest of the app
     page = st.session_state.current_page
 
-    # Update session state when page changes
-    if page != st.session_state.current_page:
-        st.session_state.current_page = page
-
-        # Update URL parameters
-        page_url_map = {
-            "⚡ Portfolio": "portfolio",
-            "↗ Live Prices": "prices",
-            "◉ ML Predictions": "predictions",
-            "◉ Rebalancing": "rebalancing"
-        }
-
-        st.query_params.page = page_url_map[page]
-        st.rerun()
-
     st.sidebar.markdown("---")
 
     # Compact system status

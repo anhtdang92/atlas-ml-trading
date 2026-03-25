@@ -91,18 +91,25 @@ class MeanReversionBaseline:
     recent return proxy.
     """
 
+    # Feature names matching FeatureEngineer output order
+    DAILY_RETURN_FEATURE = "Daily_Return"
+    MOMENTUM_FEATURE = "Momentum_14"
+
     def __init__(self, reversion_speed: float = 0.5) -> None:
         self.mean_return: float = 0.0
         self.reversion_speed = reversion_speed
+        self._daily_return_idx: int = 18  # Updated by fit() if feature names provided
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> "MeanReversionBaseline":
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray, feature_names: Optional[List[str]] = None) -> "MeanReversionBaseline":
         self.mean_return = float(np.mean(y_train))
+        if feature_names and self.DAILY_RETURN_FEATURE in feature_names:
+            self._daily_return_idx = feature_names.index(self.DAILY_RETURN_FEATURE)
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        # Use the last timestep's daily return feature (index 18 = Daily_Return)
         if X.ndim == 3:
-            recent_returns = X[:, -1, 18] if X.shape[2] > 18 else X[:, -1, 0]
+            idx = min(self._daily_return_idx, X.shape[2] - 1)
+            recent_returns = X[:, -1, idx]
         else:
             recent_returns = X[:, -1] if X.ndim == 2 else np.zeros(len(X))
 
@@ -123,15 +130,18 @@ class MomentumBaseline:
     def __init__(self, momentum_weight: float = 0.3) -> None:
         self.momentum_weight = momentum_weight
         self.mean_return: float = 0.0
+        self._momentum_idx: int = 19  # Updated by fit() if feature names provided
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> "MomentumBaseline":
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray, feature_names: Optional[List[str]] = None) -> "MomentumBaseline":
         self.mean_return = float(np.mean(y_train))
+        if feature_names and MeanReversionBaseline.MOMENTUM_FEATURE in feature_names:
+            self._momentum_idx = feature_names.index(MeanReversionBaseline.MOMENTUM_FEATURE)
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        # Use the last timestep's momentum feature (index 19 = Momentum_14)
         if X.ndim == 3:
-            momentum = X[:, -1, 19] if X.shape[2] > 19 else X[:, -1, 0]
+            idx = min(self._momentum_idx, X.shape[2] - 1)
+            momentum = X[:, -1, idx]
         else:
             momentum = X[:, -1] if X.ndim == 2 else np.zeros(len(X))
 

@@ -1,11 +1,13 @@
 """Portfolio page - Stock portfolio with real-time prices, P&L tracking, sector breakdown, and analytics."""
 
+import json
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+from pathlib import Path
 
 from ui.styles import THEME, CHART_COLORS
 from ui.components import (
@@ -13,6 +15,10 @@ from ui.components import (
     skeleton_loader, pnl_text, pnl_pct_text, sector_exposure_bar,
 )
 from data.stock_api import get_stock_info, SECTOR_MAP
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _get_demo_portfolio():
@@ -36,6 +42,29 @@ def _get_demo_portfolio():
     }
 
 
+def _load_portfolio(path: str = "config/portfolio.json") -> dict:
+    """Load portfolio from a JSON file, falling back to the hardcoded demo if the file doesn't exist."""
+    filepath = Path(path)
+    if filepath.exists():
+        try:
+            with open(filepath) as f:
+                data = json.load(f)
+            logger.info(f"Loaded portfolio from {filepath}")
+            return data
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Failed to load portfolio from {filepath}: {e}. Using demo portfolio.")
+    return _get_demo_portfolio()
+
+
+def _save_portfolio(portfolio: dict, path: str = "config/portfolio.json") -> None:
+    """Save portfolio data to a JSON file."""
+    filepath = Path(path)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(filepath, "w") as f:
+        json.dump(portfolio, f, indent=2)
+    logger.info(f"Saved portfolio to {filepath}")
+
+
 def show_portfolio_view(_stock_api):
     """Display stock portfolio overview with holdings and performance."""
     col1, col2 = st.columns([3, 1])
@@ -46,7 +75,7 @@ def show_portfolio_view(_stock_api):
             st.cache_data.clear()
             st.rerun()
 
-    portfolio_data = _get_demo_portfolio()
+    portfolio_data = _load_portfolio()
 
     # Fetch live prices
     with st.spinner("Fetching live stock prices..."):
@@ -161,7 +190,7 @@ def show_portfolio_view(_stock_api):
             f"<div style='display:flex; gap:20px; font-size:0.9rem;'>"
             f"<span class='pnl-positive'>{len(winners)} winners</span>"
             f"<span class='pnl-negative'>{len(losers)} losers</span>"
-            f"<span style='color:{THEME[\"text_muted\"]};'>Best: {max(holdings, key=lambda x: x['P&L (%)'])['Symbol']} "
+            f"<span style='color:{THEME['text_muted']};'>Best: {max(holdings, key=lambda x: x['P&L (%)'])['Symbol']} "
             f"({max(holdings, key=lambda x: x['P&L (%)'])['P&L (%)']:+.1f}%)</span>"
             f"</div>",
             unsafe_allow_html=True,

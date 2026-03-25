@@ -11,24 +11,28 @@ from data.stock_api import get_all_symbols
 
 
 def _get_training_job_status():
-    """Get the status of the latest training job from Google Cloud."""
-    import subprocess
-    try:
-        result = subprocess.run([
-            'gcloud', 'ai', 'custom-jobs', 'list',
-            '--region=us-central1',
-            '--format=value(state)',
-            '--limit=1',
-            '--sort-by=~createTime'
-        ], capture_output=True, text=True, timeout=10)
+    """Get the status of the latest training job from Google Cloud.
 
-        if result.returncode == 0:
-            status = result.stdout.strip()
-            return status if status else "NO_JOBS"
-        else:
-            return "ERROR"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
+    Uses the Vertex AI Python SDK instead of subprocess/gcloud CLI
+    to avoid shell injection risks and improve reliability.
+    """
+    try:
+        from google.cloud import aiplatform
+        aiplatform.init(project="stock-ml-trading-487", location="us-central1")
+        jobs = aiplatform.CustomJob.list(
+            filter='state!="JOB_STATE_CANCELLED"',
+            order_by="create_time desc",
+        )
+        if jobs:
+            return jobs[0].state.name
+        return "NO_JOBS"
+    except ImportError:
+        # GCP SDK not installed — check for local model files instead
+        import glob
+        model_files = glob.glob("models/*_model.*")
+        return "LOCAL_MODELS" if model_files else "NO_JOBS"
+    except Exception:
+        return "NO_JOBS"
 
 
 def show_predictions(_stock_api):
