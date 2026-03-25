@@ -75,5 +75,5 @@ coverage.xml
 # pytest
 .pytest_cache/
 
-# Streamlit
-.streamlit/
+# Streamlit logs (config.toml is tracked for Streamlit Cloud deployment)
+streamlit.log

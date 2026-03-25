@@ -9,7 +9,7 @@
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-orange)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 
-A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, real-time Yahoo Finance data, and Google Cloud ML infrastructure. Features 25 technical indicators, walk-forward backtesting, and production risk controls.
+A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, real-time Yahoo Finance data, and Google Cloud ML infrastructure. Features 34 technical indicators, 7-architecture ablation study, bootstrap statistical testing, walk-forward backtesting, and production risk controls.
 
 **Author:** Anh Dang | **License:** MIT | **GCP Project:** `stock-ml-trading-487`
 
@@ -28,18 +28,18 @@ A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, 
 </td>
 <td width="50%">
 
-**ML Predictions**
-![ML Predictions](docs/screenshots/ml_predictions.png)
-*LSTM 21-day price forecasts with confidence scores for ~30 stocks*
+**Live Prices & Charts**
+![Live Prices](docs/screenshots/live_prices.png)
+*Candlestick charts with Bollinger Bands, RSI, and volume overlays*
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-**Model Evaluation**
-![Training Curves](docs/screenshots/training_curves.png)
-*Training/validation loss convergence with early stopping*
+**ML Predictions**
+![ML Predictions](docs/screenshots/ml_predictions.png)
+*LSTM 21-day price forecasts with confidence scores for 33 stocks*
 
 </td>
 <td width="50%">
@@ -52,7 +52,14 @@ A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, 
 </tr>
 </table>
 
-> **Screenshots:** Run `streamlit run app.py` and see `notebooks/model_evaluation.ipynb` for interactive visualizations.
+> **To capture screenshots:** Run `streamlit run app.py`, navigate each page, and save screenshots to `docs/screenshots/`.
+
+### Deploy to Streamlit Cloud
+
+1. Push this repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Select this repository, branch `main`, main file `app.py`
+4. Click **Deploy** — no configuration needed (`.streamlit/config.toml` is included)
 
 ---
 
@@ -103,11 +110,14 @@ Open **http://localhost:8501** — no API keys needed!
 - **Sector allocation** pie charts
 
 ### 🧠 ML Price Predictions
-- **LSTM neural networks** (2-layer, 64 units each)
-- **25 technical indicators** (MAs, RSI, MACD, Bollinger, volume, momentum, volatility, ATR)
-- **Hybrid system**: Vertex AI → Local ML → Enhanced Mock → Basic Mock (fallback chain)
-- **Confidence scoring** for each prediction
-- **21-day forecasts** for ~30 stocks (position trading)
+- **LSTM neural networks** (2-layer, 64 units each) with MC Dropout uncertainty
+- **34 technical indicators** (MAs, RSI, MACD, Bollinger, volume, momentum, volatility, ATR, regime, calendar)
+- **7-architecture ablation study** (LSTM, BiLSTM+Attention, Transformer, CNN-LSTM, Multi-Horizon, XGBoost, Ridge)
+- **Bayesian hyperparameter tuning** via Optuna with walk-forward CV
+- **Bootstrap statistical testing** (10K resamples, Diebold-Mariano, confidence intervals)
+- **Hybrid system**: Vertex AI → Local ML → Explicit failure (no silent mock fallback)
+- **FastAPI REST endpoint** for model serving (`/api/v1/predict`)
+- **21-day forecasts** for 33 stocks (position trading)
 
 ### ⚖️ Portfolio Rebalancing
 - **ML-enhanced allocation** strategy
@@ -198,13 +208,14 @@ cp config/secrets.yaml.example config/secrets.yaml
 
 ---
 
-## 🎯 Stock Universe (~30 stocks)
+## 🎯 Stock Universe (33 stocks)
 
 | Category | Symbols |
 |----------|---------|
 | **Tech (FAANG+)** | AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA |
 | **Sector Leaders** | JPM, UNH, XOM, CAT, PG, HD, NEE, AMT, LIN |
-| **ETFs** | SPY, QQQ, DIA, IWM, XLK, XLF, XLE, XLV, ARKK |
+| **Defensive** | JNJ, KO, PEP, MCD |
+| **ETFs** | IWM, IJR, XLK, XLF, XLE, XLV, TLT, GLD |
 | **Growth** | PLTR, CRWD, SNOW, SQ, COIN |
 
 ---
@@ -258,12 +269,17 @@ kraken-ml-trading-strategy/
 │
 ├── 🧠 ml/                    # Machine Learning
 │   ├── prediction_service.py           # Main ML service
-│   ├── hybrid_prediction_service.py    # Hybrid predictions (Vertex AI → Local → TA)
-│   ├── lstm_model.py                   # LSTM architecture
-│   ├── feature_engineering.py          # 25 technical indicators
+│   ├── hybrid_prediction_service.py    # Hybrid predictions (Vertex AI → Local → Fail)
+│   ├── lstm_model.py                   # LSTM architecture (Huber loss, MC Dropout)
+│   ├── lstm_model_gpu.py              # GPU model (Transformer, multi-horizon heads)
+│   ├── feature_engineering.py          # 34 technical indicators
 │   ├── feature_importance.py          # SHAP & permutation importance analysis
+│   ├── ablation_study.py             # 7-architecture comparison study
+│   ├── statistical_tests.py          # Bootstrap CIs, Diebold-Mariano tests
+│   ├── hyperparameter_tuning.py      # Optuna Bayesian optimization
 │   ├── baseline_models.py             # Baseline comparison (Ridge, XGBoost)
 │   ├── backtest_tearsheet.py          # Quant-style performance tearsheet
+│   ├── api.py                         # FastAPI REST endpoint (/predict, /health)
 │   ├── experiment_tracker.py          # Experiment tracking (CSV + MLflow + W&B)
 │   ├── historical_data_fetcher.py      # Data collection
 │   ├── portfolio_rebalancer.py         # Rebalancing logic
@@ -282,8 +298,10 @@ kraken-ml-trading-strategy/
 │   └── model_evaluation.ipynb     # LSTM evaluation, SHAP, tearsheet
 ├── 📦 models/                # Trained models (gitignored)
 ├── 📊 results/               # Experiment logs & metrics
-├── 🧪 tests/                 # Unit & integration tests
-│   ├── unit/test_ml_pipeline.py   # ML pipeline tests (pytest)
+├── 🧪 tests/                 # Unit & integration tests (81 passing)
+│   ├── unit/test_ml_pipeline.py          # Feature engineering, data validation
+│   ├── unit/test_statistical_analysis.py # Bootstrap CIs, SHAP, tearsheet tests
+│   ├── unit/test_model_comparison.py     # Ablation, tuning, baseline tests
 │   └── integration/walk_forward_backtest.py  # Walk-forward backtesting
 └── 📚 docs/                  # Documentation
 ```
@@ -307,9 +325,10 @@ kraken-ml-trading-strategy/
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Streamlit, Plotly, Font Awesome |
-| **ML/AI** | TensorFlow/Keras (LSTM), scikit-learn, SHAP, Google Vertex AI |
+| **ML/AI** | TensorFlow/Keras (LSTM, Transformer), scikit-learn, XGBoost, SHAP, Optuna |
+| **API** | FastAPI + Uvicorn (REST endpoint for model serving) |
 | **Experiment Tracking** | CSV + MLflow + Weights & Biases (optional) |
-| **Model Evaluation** | SHAP, permutation importance, backtest tearsheets |
+| **Model Evaluation** | 7-arch ablation, bootstrap CIs, Diebold-Mariano, SHAP, backtest tearsheets |
 | **Data Validation** | Pandera schemas for OHLCV, features, and predictions |
 | **Data** | Yahoo Finance (yfinance - free, no API key) |
 | **Storage** | Google BigQuery, Cloud Storage |
@@ -333,20 +352,19 @@ kraken-ml-trading-strategy/
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-python -m pytest tests/ -v
+# Run all unit tests (81 passing, ~8 seconds)
+python -m pytest tests/unit/test_ml_pipeline.py tests/unit/test_statistical_analysis.py tests/unit/test_model_comparison.py -v
 
-# ML pipeline tests (feature engineering, data validation, portfolio logic)
-python -m pytest tests/unit/test_ml_pipeline.py -v
-
-# Stock API connectivity
-python -m pytest tests/unit/test_stock_api.py -v
+# Individual test suites
+python -m pytest tests/unit/test_ml_pipeline.py -v          # Feature engineering, data validation
+python -m pytest tests/unit/test_statistical_analysis.py -v  # Bootstrap CIs, SHAP, tearsheet
+python -m pytest tests/unit/test_model_comparison.py -v      # Ablation, tuning, baselines
 
 # Walk-forward backtesting with financial metrics
 python tests/integration/walk_forward_backtest.py
 
-# Baseline model comparison
-python -m ml.baseline_models
+# FastAPI endpoint
+uvicorn ml.api:app --reload  # http://localhost:8000/api/v1/docs
 
 # GCP connection
 python tests/unit/test_gcp.py
@@ -376,26 +394,27 @@ python tests/unit/test_gcp.py
 
 ## 🎯 Roadmap
 
-- [x] Real-time stock portfolio tracking
-- [x] LSTM price predictions (25 features)
-- [x] Google Cloud ML training
-- [x] Portfolio rebalancing with risk controls
-- [x] Cyberpunk UI theme
+- [x] Real-time stock portfolio tracking (33 stocks across 5 categories)
+- [x] LSTM price predictions (34 features, MC Dropout uncertainty)
+- [x] 7-architecture ablation study (LSTM, BiLSTM+Attention, Transformer, CNN-LSTM, Multi-Horizon, XGBoost, Ridge)
+- [x] Bayesian hyperparameter tuning (Optuna + walk-forward CV)
+- [x] Bootstrap statistical testing (10K resamples, Diebold-Mariano, CIs)
+- [x] FastAPI REST endpoint for model serving
+- [x] Google Cloud ML training (Vertex AI)
+- [x] Portfolio rebalancing with risk controls (8% stop-loss, 12% circuit breaker)
+- [x] Cyberpunk UI theme (glass morphism, neon, WCAG AA)
 - [x] Walk-forward backtesting with financial metrics
-- [x] Baseline model comparison (Ridge, XGBoost)
-- [x] Experiment tracking pipeline (CSV + MLflow + W&B)
-- [x] Data validation schemas
-- [x] CI/CD with GitHub Actions (lint, test, coverage, Docker)
-- [x] EDA & model analysis notebook
+- [x] Baseline model comparison (Ridge, XGBoost, Momentum, Mean Reversion, Buy & Hold)
 - [x] SHAP & permutation feature importance analysis
-- [x] Backtest tearsheet (Sharpe, Sortino, Calmar, drawdown)
+- [x] Backtest tearsheet (Sharpe, Sortino, Calmar, drawdown, monthly heatmap)
+- [x] 81 unit tests across 3 test suites
+- [x] CI/CD with GitHub Actions (lint, test, coverage, Docker)
 - [x] Docker Compose one-command setup
-- [x] Model evaluation notebook with training curves & confusion matrix
+- [x] Model evaluation notebook (12 sections)
 - [ ] Automated trading via Alpaca API
 - [ ] Multi-timeframe analysis
 - [ ] Earnings calendar integration
 - [ ] Options strategy overlay
-- [ ] Mobile-responsive dashboard
 
 ---
 
