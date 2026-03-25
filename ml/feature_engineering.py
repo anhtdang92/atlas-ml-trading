@@ -197,8 +197,12 @@ class FeatureEngineer:
             df['DayOfWeek_Cos'] = 0.0
             return df
 
-        month = ts.month
-        day_of_week = ts.dayofweek
+        if hasattr(ts, 'dt'):
+            month = ts.dt.month
+            day_of_week = ts.dt.dayofweek
+        else:
+            month = ts.month
+            day_of_week = ts.dayofweek
 
         df['Month_Sin'] = np.sin(2 * np.pi * month / 12)
         df['Month_Cos'] = np.cos(2 * np.pi * month / 12)
