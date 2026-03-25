@@ -93,7 +93,7 @@ def all_symbols():
 # ---------------------------------------------------------------------------
 
 EXPECTED_FEATURES = [
-    "close", "volume",
+    "close", "Log_Volume",
     "MA_10", "MA_20", "MA_50", "MA_200",
     "Price_to_MA50", "Price_to_MA200", "MA_50_200_Cross",
     "RSI",
@@ -102,6 +102,9 @@ EXPECTED_FEATURES = [
     "Volume_MA_20", "Volume_ROC", "Volume_Ratio",
     "Daily_Return", "Momentum_14", "Momentum_30", "ROC_10",
     "Volatility_14", "Volatility_30", "ATR_14",
+    "Vol_Regime", "Dist_52w_High", "Price_Zscore", "Trend_Strength",
+    "Month_Sin", "Month_Cos", "DayOfWeek_Sin", "DayOfWeek_Cos",
+    "Relative_Strength",
 ]
 
 
@@ -128,7 +131,7 @@ class TestFeatureEngineering:
         assert y.ndim == 1, "y must be 1-dimensional"
         assert X.shape[0] == y.shape[0], "X and y sample counts must match"
         assert X.shape[1] == 30, "Lookback dimension must be 30"
-        assert X.shape[2] == 25, "Feature dimension must be 25"
+        assert X.shape[2] == 34, "Feature dimension must be 34"
 
     def test_create_sequences_lookback_parameter(self, feature_engineer, sample_ohlcv):
         """Different lookback values should produce correct timestep dimensions."""
@@ -175,7 +178,7 @@ class TestFeatureEngineering:
     def test_feature_count_matches_config(self, feature_engineer, sample_ohlcv):
         """The feature list must contain exactly 25 features."""
         feature_engineer.calculate_features(sample_ohlcv)
-        assert len(feature_engineer.features) == 25, \
+        assert len(feature_engineer.features) == 34, \
             f"Expected 25 features, got {len(feature_engineer.features)}"
 
 
@@ -187,12 +190,12 @@ class TestStockUniverse:
     """Tests for the STOCK_UNIVERSE data and helper functions."""
 
     def test_total_symbol_count(self, all_symbols):
-        """The universe should contain exactly 30 symbols."""
-        assert len(all_symbols) == 30, f"Expected 30, got {len(all_symbols)}"
+        """The universe should contain exactly 33 symbols."""
+        assert len(all_symbols) == 33, f"Expected 33, got {len(all_symbols)}"
 
     def test_category_counts(self):
         """Each category must have the documented number of symbols."""
-        expected = {"tech": 7, "sector_leaders": 9, "etfs": 9, "growth": 5}
+        expected = {"tech": 7, "sector_leaders": 9, "defensive": 4, "etfs": 8, "growth": 5}
         for category, count in expected.items():
             actual = len(STOCK_UNIVERSE[category])
             assert actual == count, \
@@ -217,6 +220,7 @@ class TestStockUniverse:
 # TestPortfolioRebalancer
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not HAS_TENSORFLOW, reason="TensorFlow not installed")
 class TestPortfolioRebalancer:
     """Tests for PortfolioRebalancer with mocked dependencies."""
 
@@ -392,15 +396,26 @@ class TestFeatureEngineeringEdgeCases:
                 assert result[col].isna().sum() == 0, \
                     f"NaN in '{col}' for constant price series"
 
-    def test_sequences_with_short_data(self, feature_engineer, short_ohlcv):
-        """With 60 rows, sequences should still be created (fewer samples)."""
-        df = feature_engineer.calculate_features(short_ohlcv)
+    def test_sequences_with_short_data(self, feature_engineer):
+        """With 120 rows, sequences should still be created (fewer samples)."""
+        np.random.seed(99)
+        dates = pd.date_range(end=datetime(2026, 3, 20), periods=120, freq="B")
+        price = np.abs(np.random.randn(120).cumsum() + 200) + 80
+        short_df = pd.DataFrame({
+            "timestamp": dates,
+            "open": price + np.random.randn(120) * 0.3,
+            "high": price + np.abs(np.random.randn(120)) * 1.5,
+            "low": price - np.abs(np.random.randn(120)) * 1.5,
+            "close": price,
+            "volume": (np.random.rand(120) * 500_000 + 200_000).astype(int),
+        })
+        df = feature_engineer.calculate_features(short_df)
         X, y = feature_engineer.create_sequences(
             df, lookback=30, prediction_horizon=21
         )
         assert X.shape[0] > 0, "No sequences created from short data"
         assert X.shape[1] == 30
-        assert X.shape[2] == 25
+        assert X.shape[2] == 34
 
     def test_normalize_idempotent_range(self, feature_engineer, sample_ohlcv):
         """Normalizing twice should still keep values within [0, 1]."""
@@ -422,7 +437,7 @@ class TestFeatureEngineeringEdgeCases:
         """Features list should be empty before and populated after calculation."""
         assert len(feature_engineer.features) == 0
         feature_engineer.calculate_features(sample_ohlcv)
-        assert len(feature_engineer.features) == 25
+        assert len(feature_engineer.features) == 34
 
 
 # ---------------------------------------------------------------------------
