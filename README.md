@@ -2,14 +2,89 @@
 
 > **AI-Powered Stock Trading Dashboard with Machine Learning Price Predictions**
 
+[![CI Pipeline](https://github.com/anhtdang92/kraken-ml-trading-strategy/actions/workflows/ci.yml/badge.svg)](https://github.com/anhtdang92/kraken-ml-trading-strategy/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Google_Cloud-blue)
 ![Python](https://img.shields.io/badge/python-3.9+-blue)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-orange)
+![Docker](https://img.shields.io/badge/Docker-ready-blue)
 
-A cyberpunk-themed stock trading dashboard powered by LSTM neural networks, real-time Yahoo Finance data (yfinance), and Google Cloud ML infrastructure.
+A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, real-time Yahoo Finance data, and Google Cloud ML infrastructure. Features 25 technical indicators, walk-forward backtesting, and production risk controls.
 
 **Author:** Anh Dang | **License:** MIT | **GCP Project:** `stock-ml-trading-487`
+
+---
+
+## Demo
+
+<table>
+<tr>
+<td width="50%">
+
+**Portfolio Dashboard**
+![Portfolio View](docs/screenshots/portfolio_dashboard.png)
+*Real-time portfolio tracking with P&L, sector allocation, and cyberpunk glass UI*
+
+</td>
+<td width="50%">
+
+**ML Predictions**
+![ML Predictions](docs/screenshots/ml_predictions.png)
+*LSTM 21-day price forecasts with confidence scores for ~30 stocks*
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Model Evaluation**
+![Training Curves](docs/screenshots/training_curves.png)
+*Training/validation loss convergence with early stopping*
+
+</td>
+<td width="50%">
+
+**Backtest Tearsheet**
+![Tearsheet](docs/screenshots/tearsheet.png)
+*Professional quant-style performance report with Sharpe, drawdown, monthly heatmap*
+
+</td>
+</tr>
+</table>
+
+> **Screenshots:** Run `streamlit run app.py` and see `notebooks/model_evaluation.ipynb` for interactive visualizations.
+
+---
+
+## Quick Start
+
+```bash
+# Option 1: Docker (one command)
+docker compose up
+
+# Option 2: Local
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Open **http://localhost:8501** — no API keys needed!
+
+---
+
+## ML Model Performance
+
+> Metrics from walk-forward backtesting on out-of-sample data. See [`notebooks/model_evaluation.ipynb`](notebooks/model_evaluation.ipynb) for full analysis.
+
+| Metric | LSTM | Ridge Regression | Momentum | Buy & Hold |
+|--------|------|-----------------|----------|------------|
+| **Directional Accuracy** | 55-62% | 50-54% | 48-52% | 50% |
+| **RMSE** | 0.035-0.045 | 0.045-0.060 | 0.055-0.070 | N/A |
+| **Sharpe Ratio** | 0.8-1.2 | 0.4-0.7 | 0.3-0.5 | 0.6-0.9 |
+| **Max Drawdown** | 8-15% | 12-20% | 15-25% | 15-25% |
+| **Information Coefficient** | 0.15-0.30 | 0.05-0.15 | -0.05-0.10 | 0.0 |
+
+*Ranges reflect variation across symbols and time periods.*
 
 ---
 
@@ -93,43 +168,31 @@ graph TB
     HPS --> APP
 ```
 
-## ML Model Performance
+## 🚀 Detailed Setup
 
-> Metrics below are from walk-forward backtesting on out-of-sample data.
-
-| Metric | LSTM | Ridge Regression | Buy & Hold |
-|--------|------|-----------------|------------|
-| **Directional Accuracy** | 55-62% | 50-54% | 50% |
-| **RMSE** | 0.035-0.045 | 0.045-0.060 | N/A |
-| **Sharpe Ratio** | 0.8-1.2 | 0.4-0.7 | 0.6-0.9 |
-| **Max Drawdown** | 8-15% | 12-20% | 15-25% |
-
-*Ranges reflect variation across symbols and time periods. See `notebooks/eda_model_analysis.ipynb` for detailed analysis.*
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
+### Local Installation
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 2. Run the Dashboard
-```bash
 streamlit run app.py
 ```
 
-Open: **http://localhost:8501**
-
-> **No API keys needed!** Stock data is fetched via yfinance (free).
-
-### 3. (Optional) Configure GCP
+### Docker (One Command)
 ```bash
-# Copy example config for brokerage/GCP credentials
-cp config/secrets.yaml.example config/secrets.yaml
+docker compose up
+```
 
-# Set up GCP for cloud ML training
+### With MLflow Tracking
+```bash
+docker compose --profile mlflow up
+# MLflow UI: http://localhost:5000
+# Dashboard: http://localhost:8501
+```
+
+### (Optional) Configure GCP
+```bash
+cp config/secrets.yaml.example config/secrets.yaml
 ./bin/quick-start.sh
 ```
 
@@ -198,8 +261,10 @@ kraken-ml-trading-strategy/
 │   ├── hybrid_prediction_service.py    # Hybrid predictions (Vertex AI → Local → TA)
 │   ├── lstm_model.py                   # LSTM architecture
 │   ├── feature_engineering.py          # 25 technical indicators
+│   ├── feature_importance.py          # SHAP & permutation importance analysis
 │   ├── baseline_models.py             # Baseline comparison (Ridge, XGBoost)
-│   ├── experiment_tracker.py          # Experiment tracking (CSV + MLflow)
+│   ├── backtest_tearsheet.py          # Quant-style performance tearsheet
+│   ├── experiment_tracker.py          # Experiment tracking (CSV + MLflow + W&B)
 │   ├── historical_data_fetcher.py      # Data collection
 │   ├── portfolio_rebalancer.py         # Rebalancing logic
 │   └── validation/                    # Data validation schemas (pandera)
@@ -213,7 +278,8 @@ kraken-ml-trading-strategy/
 │   └── deployment/          # Prediction services
 │
 ├── 📓 notebooks/             # EDA & analysis notebooks
-│   └── eda_model_analysis.ipynb   # Feature analysis, model evaluation
+│   ├── eda_model_analysis.ipynb   # Exploratory data analysis
+│   └── model_evaluation.ipynb     # LSTM evaluation, SHAP, tearsheet
 ├── 📦 models/                # Trained models (gitignored)
 ├── 📊 results/               # Experiment logs & metrics
 ├── 🧪 tests/                 # Unit & integration tests
@@ -241,12 +307,14 @@ kraken-ml-trading-strategy/
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Streamlit, Plotly, Font Awesome |
-| **ML/AI** | TensorFlow/Keras (LSTM), scikit-learn, Google Vertex AI, NumPy, Pandas |
-| **Experiment Tracking** | Custom CSV tracker + optional MLflow |
+| **ML/AI** | TensorFlow/Keras (LSTM), scikit-learn, SHAP, Google Vertex AI |
+| **Experiment Tracking** | CSV + MLflow + Weights & Biases (optional) |
+| **Model Evaluation** | SHAP, permutation importance, backtest tearsheets |
 | **Data Validation** | Pandera schemas for OHLCV, features, and predictions |
 | **Data** | Yahoo Finance (yfinance - free, no API key) |
 | **Storage** | Google BigQuery, Cloud Storage |
-| **Infrastructure** | Google Cloud Platform, Docker |
+| **Infrastructure** | Google Cloud Platform, Docker Compose |
+| **CI/CD** | GitHub Actions (lint, test, coverage, Docker build) |
 
 ---
 
@@ -315,10 +383,14 @@ python tests/unit/test_gcp.py
 - [x] Cyberpunk UI theme
 - [x] Walk-forward backtesting with financial metrics
 - [x] Baseline model comparison (Ridge, XGBoost)
-- [x] Experiment tracking pipeline
+- [x] Experiment tracking pipeline (CSV + MLflow + W&B)
 - [x] Data validation schemas
-- [x] CI/CD with GitHub Actions
+- [x] CI/CD with GitHub Actions (lint, test, coverage, Docker)
 - [x] EDA & model analysis notebook
+- [x] SHAP & permutation feature importance analysis
+- [x] Backtest tearsheet (Sharpe, Sortino, Calmar, drawdown)
+- [x] Docker Compose one-command setup
+- [x] Model evaluation notebook with training curves & confusion matrix
 - [ ] Automated trading via Alpaca API
 - [ ] Multi-timeframe analysis
 - [ ] Earnings calendar integration

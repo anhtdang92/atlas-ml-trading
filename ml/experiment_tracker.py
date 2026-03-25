@@ -27,9 +27,16 @@ logger = logging.getLogger(__name__)
 
 try:
     import mlflow
+    import mlflow.keras
     HAS_MLFLOW = True
 except ImportError:
     HAS_MLFLOW = False
+
+try:
+    import wandb
+    HAS_WANDB = True
+except ImportError:
+    HAS_WANDB = False
 
 
 @dataclass
@@ -91,12 +98,15 @@ class RunContext:
 class ExperimentTracker:
     """Track ML experiment runs with metrics, params, and artifacts.
 
-    Stores results as CSV (always) and optionally logs to MLflow.
+    Stores results as CSV (always) and optionally logs to MLflow and/or W&B.
 
     Args:
         results_dir: Directory for experiment logs and artifacts.
         experiment_name: Name for grouping runs (used as MLflow experiment).
         use_mlflow: Enable MLflow logging if available.
+        use_wandb: Enable Weights & Biases logging if available.
+        mlflow_tracking_uri: MLflow server URI (default: local ./mlruns).
+        wandb_project: W&B project name.
     """
 
     def __init__(
@@ -104,20 +114,33 @@ class ExperimentTracker:
         results_dir: str = "results/experiments",
         experiment_name: str = "stock-lstm-predictions",
         use_mlflow: bool = False,
+        use_wandb: bool = False,
+        mlflow_tracking_uri: Optional[str] = None,
+        wandb_project: str = "atlas-stock-ml",
     ):
         self.results_dir = Path(results_dir)
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.experiment_name = experiment_name
         self.use_mlflow = use_mlflow and HAS_MLFLOW
+        self.use_wandb = use_wandb and HAS_WANDB
+        self.wandb_project = wandb_project
         self.csv_path = self.results_dir / "experiment_log.csv"
         self._runs: List[RunRecord] = []
         self._load_existing_runs()
 
         if self.use_mlflow:
+            if mlflow_tracking_uri:
+                mlflow.set_tracking_uri(mlflow_tracking_uri)
             mlflow.set_experiment(experiment_name)
-            logger.info(f"MLflow experiment: {experiment_name}")
+            logger.info(f"MLflow experiment: {experiment_name} (uri={mlflow.get_tracking_uri()})")
 
-        logger.info(f"ExperimentTracker initialized (dir={results_dir}, mlflow={self.use_mlflow})")
+        backends = []
+        if self.use_mlflow:
+            backends.append("MLflow")
+        if self.use_wandb:
+            backends.append("W&B")
+        backends.append("CSV")
+        logger.info(f"ExperimentTracker initialized (backends={', '.join(backends)})")
 
     def _load_existing_runs(self) -> None:
         """Load previous runs from CSV."""
@@ -182,6 +205,8 @@ class ExperimentTracker:
         start_time = datetime.now()
 
         mlflow_run = None
+        wandb_run = None
+
         if self.use_mlflow:
             mlflow_run = mlflow.start_run(run_name=f"{symbol}_{run_id}")
             mlflow.log_params(record.params)
@@ -189,6 +214,16 @@ class ExperimentTracker:
                 for k, v in record.tags.items():
                     mlflow.set_tag(k, v)
             mlflow.set_tag("symbol", symbol)
+
+        if self.use_wandb:
+            wandb_config = {**record.params, "symbol": symbol}
+            wandb_run = wandb.init(
+                project=self.wandb_project,
+                name=f"{symbol}_{run_id}",
+                config=wandb_config,
+                tags=[symbol, self.experiment_name] + list(record.tags.values()),
+                reinit=True,
+            )
 
         try:
             yield ctx
@@ -206,6 +241,12 @@ class ExperimentTracker:
                 if record.model_path:
                     mlflow.log_artifact(record.model_path)
                 mlflow.end_run()
+
+            if self.use_wandb and wandb_run:
+                if record.metrics:
+                    wandb.log(record.metrics)
+                wandb.log({"duration_seconds": record.duration_seconds})
+                wandb.finish()
 
             self._runs.append(record)
             self._save_run(record)
