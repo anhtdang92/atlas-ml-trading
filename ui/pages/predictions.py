@@ -57,11 +57,11 @@ def show_predictions(_stock_api):
     with col1:
         prediction_mode = st.selectbox(
             "Prediction Mode:",
-            options=["hybrid", "enhanced_mock", "vertex_ai"],
+            options=["hybrid", "technical_analysis", "vertex_ai"],
             format_func=lambda x: {
-                "hybrid": "🔀 Hybrid (Best of Both Worlds)",
-                "enhanced_mock": "🏠 Enhanced Mock (Reliable)",
-                "vertex_ai": "☁️ Vertex AI (Real ML)"
+                "hybrid": "🔀 Hybrid (ML + Technical Analysis)",
+                "technical_analysis": "📊 Technical Analysis (Local)",
+                "vertex_ai": "☁️ Vertex AI (Cloud ML)"
             }[x],
             help="Choose your prediction strategy",
             index=0  # Default to Hybrid
@@ -121,7 +121,7 @@ def show_predictions(_stock_api):
     try:
         if prediction_mode == "hybrid" and hybrid_service is not None:
             prediction_service = hybrid_service
-        elif prediction_mode == "enhanced_mock":
+        elif prediction_mode == "technical_analysis":
             from ml.prediction_service import PredictionService
             prediction_service = PredictionService(provider="local")
         else:  # vertex_ai or hybrid fallback
@@ -152,22 +152,20 @@ def show_predictions(_stock_api):
 
     # Show current prediction mode status
     if prediction_mode == "hybrid":
-        st.success("🔀 **Using Hybrid Prediction System** - Best of both worlds!")
+        st.success("🔀 **Using Hybrid Prediction System**")
         st.info("""
-        **Hybrid System Features:**
-        • **Real ML Models** when available (Vertex AI or local)
-        • **Enhanced Mock Predictions** with technical analysis as fallback
-        • **Automatic failover** ensures predictions always work
-        • **Source transparency** - see which method was used for each prediction
+        **Hybrid System:**
+        • **Trained LSTM models** when available (Vertex AI or local)
+        • **Technical analysis fallback** (RSI, trend, volatility signals)
+        • **Automatic failover** with source transparency per prediction
         """)
-    elif prediction_mode == "enhanced_mock":
-        st.success("🏠 **Using Enhanced Mock Predictions** - Reliable and sophisticated!")
+    elif prediction_mode == "technical_analysis":
+        st.success("📊 **Using Technical Analysis Predictions**")
         st.info("""
-        **Enhanced Mock Features:**
+        **Technical Analysis Features:**
         • **Real-time Yahoo Finance data**
-        • **Technical analysis** (RSI, trends, volatility)
-        • **Dynamic confidence scoring**
-        • **Always available** - no training required
+        • **RSI, trend, and volatility** signal scoring
+        • **Always available** — no trained model required
         """)
     else:  # vertex_ai
         if hasattr(prediction_service, 'vertex_service') and prediction_service.vertex_service:
@@ -223,33 +221,6 @@ def show_predictions(_stock_api):
                             st.info("◉ **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
                             st.info("◉ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
 
-    # Train all models button
-    st.markdown("### ◉ Train All Models")
-    if st.button("◉ Train All Models", type="primary", use_container_width=True):
-        with st.spinner("Training all models... This may take several minutes."):
-            try:
-                results = prediction_service.train_all_models()
-
-                # Show training results
-                st.success("◉ Training completed!")
-
-                # Display results (results is a dict like {'AAPL': {...}, 'MSFT': {...}})
-                for symbol, result in results.items():
-                    if result['status'] == 'success':
-                        st.success(f"◉ {symbol}: {result.get('message', 'Training successful')}")
-                    else:
-                        st.error(f"⊗ {symbol}: {result.get('message', 'Training failed')}")
-
-            except Exception as e:
-                st.error(f"⊗ Training failed: {e}")
-                st.info("◉ **Solution**: Install TensorFlow with Python 3.9-3.11 to train real models.")
-
-                # Show what actually happened
-                st.info("◉ **What happened**: The system successfully fetched real data and calculated features, but failed at the TensorFlow model creation step.")
-                st.info("◉ **Data processed**: 366 days of real market data with 11 technical indicators")
-                st.info("⟳ **Sequences created**: 352 training sequences ready for LSTM training")
-                st.info("⊗ **Missing**: TensorFlow library for neural network training")
-
     st.markdown("---")
 
     # Generate predictions
@@ -300,7 +271,7 @@ def show_predictions(_stock_api):
 
                 with col:
                     confidence = pred['confidence']
-                    is_mock = pred.get('status') in ('enhanced_mock', 'basic_mock')
+                    is_mock = pred.get('status') in ('enhanced_mock', 'basic_mock', 'technical_analysis')
                     is_no_model = pred.get('status') == 'no_model'
                     low_conf = confidence < 0.6
 
@@ -319,8 +290,8 @@ def show_predictions(_stock_api):
                     source = pred.get('prediction_source', 'unknown')
                     if source == 'local_ml':
                         source_badge = f'<span style="color:{THEME["accent_success"]};font-size:0.7rem;">ML Model</span>'
-                    elif source in ('technical_analysis', 'basic_mock'):
-                        source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">MOCK - Do Not Trade</span>'
+                    elif source in ('technical_analysis', 'basic_mock', 'enhanced_mock'):
+                        source_badge = f'<span style="color:{THEME["accent_warning"]};font-size:0.7rem;">Technical Analysis</span>'
                     elif source == 'none':
                         source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">No Model</span>'
                     else:
@@ -329,7 +300,7 @@ def show_predictions(_stock_api):
                     # Warning banner for mock/no-model
                     warning_html = ""
                     if is_mock:
-                        warning_html = f'<div style="background:{THEME["accent_danger"]}15;color:{THEME["accent_danger"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">MOCK DATA - Not a real prediction</div>'
+                        warning_html = f'<div style="background:{THEME["accent_warning"]}15;color:{THEME["accent_warning"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">Technical Analysis — train LSTM for ML predictions</div>'
                     elif is_no_model:
                         warning_html = f'<div style="background:{THEME["accent_warning"]}15;color:{THEME["accent_warning"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">No trained model - train first</div>'
 
@@ -386,8 +357,9 @@ def show_predictions(_stock_api):
         source_display = {
             'vertex_ai_ml': '🤖 Vertex AI ML',
             'local_ml': '🧠 Local ML',
-            'enhanced_mock': '🔧 Enhanced Mock',
-            'basic_mock': '⚠️ Basic Mock'
+            'enhanced_mock': '📊 Technical Analysis',
+            'technical_analysis': '📊 Technical Analysis',
+            'basic_mock': '📊 Technical Analysis'
         }.get(prediction_source, '❓ Unknown')
 
         table_data.append({
@@ -407,83 +379,19 @@ def show_predictions(_stock_api):
             hide_index=True
         )
 
-    # Model training section
+    # Model architecture info
     st.markdown("---")
-    st.markdown("### ◉ Model Training")
-
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
+    with st.expander("◉ Model Architecture & Training"):
         st.markdown("""
-        **Train Custom Models:**
-
-        - **LSTM Architecture**: 2-layer neural network with 50 units each
-        - **Features**: 11 technical indicators (MA, RSI, Volume, Momentum, Volatility)
-        - **Training Data**: 365 days of historical data from Yahoo Finance
-        - **Prediction Target**: 7-day future returns
-        - **Validation**: 80/20 train/validation split with early stopping
+        **LSTM Architecture:**
+        - **Layers:** 2-layer LSTM (64 units each) with 0.2 dropout
+        - **Loss:** Huber loss (robust to earnings-day outliers)
+        - **Uncertainty:** MC Dropout (50 forward passes for confidence intervals)
+        - **Features:** 34 technical indicators (MA, RSI, MACD, Bollinger, volume, momentum, volatility, regime, calendar)
+        - **Input:** 30-day lookback windows → **Output:** 21-day return forecast
+        - **Validation:** Walk-forward cross-validation (no future data leakage)
+        - **Training:** `./bin/train_local.sh` (local GPU/CPU) or `./bin/train_now.sh` (Vertex AI)
         """)
-
-    with col2:
-        if st.button("◉ Train All Models", use_container_width=True):
-            with st.spinner("Training all models... This will take several minutes."):
-                results = prediction_service.train_all_models(days=365, epochs=50)
-
-                # Display results with better formatting
-                st.markdown("#### ◉ Training Results:")
-
-                successful = 0
-                failed = 0
-
-                for symbol, result in results.items():
-                    if result['status'] == 'success':
-                        st.success(f"◉ **{symbol}**: Trained successfully")
-                        successful += 1
-                        with st.expander(f"◉ {symbol} Training Details"):
-                            st.json(result)
-                    else:
-                        st.error(f"⊗ **{symbol}**: {result['message']}")
-                        failed += 1
-
-                        # Show solution for TensorFlow error
-                        if "TensorFlow is required" in result['message']:
-                            st.info(f"◉ **Solution for {symbol}**: Install TensorFlow with Python 3.9-3.11")
-
-                # Summary
-                if successful > 0:
-                    st.success(f"◉ **{successful} models trained successfully!**")
-                if failed > 0:
-                    st.warning(f"⊗ **{failed} models failed** - TensorFlow installation required")
-
-                # Show installation instructions
-                if failed > 0:
-                    with st.expander("◉ How to Install TensorFlow for Real Model Training"):
-                        st.markdown("""
-                        **To train real LSTM models, you need TensorFlow:**
-
-                        1. **Create a new Python environment** with Python 3.9-3.11:
-                           ```bash
-                           conda create -n stock-ml python=3.11
-                           conda activate stock-ml
-                           ```
-
-                        2. **Install TensorFlow**:
-                           ```bash
-                           pip install tensorflow==2.13.0
-                           ```
-
-                        3. **Install other dependencies**:
-                           ```bash
-                           pip install -r requirements.txt
-                           ```
-
-                        4. **Run the app**:
-                           ```bash
-                           streamlit run app.py
-                           ```
-
-                        **Current Status**: Using mock predictions (realistic but not trained on your data)
-                        """)
 
     # Model status
     st.markdown("### ◉ Model Status")
@@ -515,22 +423,17 @@ def show_predictions(_stock_api):
         st.markdown("""
         **How It Works:**
 
-        1. **Data Collection**: Fetches 365 days of OHLCV data from Yahoo Finance
-        2. **Feature Engineering**: Creates 11 technical indicators:
-           - Moving Averages (7, 14, 30-day)
-           - RSI (Relative Strength Index)
-           - Volume indicators
-           - Price momentum
-           - Volatility measures
-        3. **LSTM Training**: 2-layer neural network learns patterns from historical data
-        4. **Prediction**: Uses last 7 days of features to predict future returns
-        5. **Confidence**: Based on model certainty and historical accuracy
+        1. **Data Collection**: Fetches 2 years of OHLCV data from Yahoo Finance
+        2. **Feature Engineering**: Computes 34 technical indicators across 9 categories
+        3. **Sequence Creation**: 30-day lookback windows with train-only normalization
+        4. **LSTM Training**: 2-layer LSTM with Huber loss and walk-forward validation
+        5. **MC Dropout**: 50 stochastic forward passes for uncertainty estimation
+        6. **Risk Controls**: Confidence thresholds, position limits, sector caps
 
         **Important Notes:**
-        - Predictions are for educational purposes only
-        - Past performance doesn't guarantee future results
-        - Always do your own research before trading
-        - Models are retrained weekly to adapt to market changes
+        - Predictions are for educational and research purposes only
+        - Past performance does not guarantee future results
+        - Always conduct independent research before making investment decisions
         """)
 
     # Status info

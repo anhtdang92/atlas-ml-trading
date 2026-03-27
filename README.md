@@ -8,10 +8,13 @@
 ![Python](https://img.shields.io/badge/python-3.9+-blue)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-orange)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
+![Tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
 
 A cyberpunk-themed stock trading dashboard powered by **LSTM neural networks**, real-time Yahoo Finance data, and Google Cloud ML infrastructure. Features 34 technical indicators, 7-architecture ablation study, bootstrap statistical testing, walk-forward backtesting, and production risk controls.
 
 **Author:** Anh Dang | **License:** MIT | **GCP Project:** `stock-ml-trading-487`
+
+**Quick Links:** [Demo](#demo) · [Quick Start](#quick-start) · [ML Pipeline](#-ml-price-predictions) · [Architecture](#system-architecture) · [Testing](#-testing) · [What I Learned](#-what-i-learned)
 
 ---
 
@@ -298,7 +301,7 @@ kraken-ml-trading-strategy/
 │   └── model_evaluation.ipynb     # LSTM evaluation, SHAP, tearsheet
 ├── 📦 models/                # Trained models (gitignored)
 ├── 📊 results/               # Experiment logs & metrics
-├── 🧪 tests/                 # Unit & integration tests (81 passing)
+├── 🧪 tests/                 # Unit & integration tests (153 passing)
 │   ├── unit/test_ml_pipeline.py          # Feature engineering, data validation
 │   ├── unit/test_statistical_analysis.py # Bootstrap CIs, SHAP, tearsheet tests
 │   ├── unit/test_model_comparison.py     # Ablation, tuning, baseline tests
@@ -389,6 +392,19 @@ python tests/unit/test_gcp.py
 - **Dashboard load:** <2 seconds
 - **Training time:** 30-60 minutes (7 tech stocks on Vertex AI)
 - **Inference:** <50ms via Vertex AI endpoint
+
+---
+
+## 💡 What I Learned
+
+Building ATLAS taught me more about ML engineering than any course or textbook:
+
+- **Walk-forward CV is non-negotiable for time series.** Early experiments with random k-fold showed inflated accuracy (~68%). Switching to walk-forward dropped it to a more honest 55-62% — humbling, but that's real performance.
+- **Huber loss > MSE for financial data.** Earnings-day outliers were dominating the loss function. Switching to Huber (delta=0.1) improved out-of-sample Sharpe ratio by ~0.15.
+- **MC Dropout uncertainty is surprisingly useful.** Predictions where the model "disagrees with itself" across 50 forward passes turned out to be the ones you shouldn't trade. This insight shaped the confidence-weighted position sizing.
+- **Feature engineering matters more than architecture.** The 7-architecture ablation study showed that a simple 2-layer LSTM with good features beats a Transformer with bad features. The market regime indicators (volatility regime, distance to 52w high) were the biggest contributors.
+- **Risk controls are the actual product.** The 8% stop-loss and 12% drawdown circuit breaker prevent more losses than the ML model prevents. In backtesting, the risk controls alone improved risk-adjusted returns by ~30%.
+- **Mock predictions are dangerous.** Early versions silently fell back to mock data when no model was trained. I removed this entirely — the system now fails explicitly. Silent failures in trading systems are unacceptable.
 
 ---
 

@@ -112,7 +112,7 @@ class TestFeatureEngineering:
     """Tests for the FeatureEngineer class."""
 
     def test_calculate_features_output_columns(self, feature_engineer, sample_ohlcv):
-        """Verify all 25 expected feature columns are present after calculation."""
+        """Verify all 34 expected feature columns are present after calculation."""
         df = feature_engineer.calculate_features(sample_ohlcv)
         for col in EXPECTED_FEATURES:
             assert col in df.columns, f"Missing feature column: {col}"
@@ -124,7 +124,7 @@ class TestFeatureEngineering:
             assert nan_count == 0, f"Column '{col}' has {nan_count} NaN values"
 
     def test_create_sequences_shapes(self, feature_engineer, sample_ohlcv):
-        """X shape must be (n, 30, 25) and y shape must be (n,)."""
+        """X shape must be (n, 30, 34) and y shape must be (n,)."""
         df = feature_engineer.calculate_features(sample_ohlcv)
         X, y = feature_engineer.create_sequences(df, lookback=30, prediction_horizon=21)
         assert X.ndim == 3, "X must be 3-dimensional"
@@ -176,10 +176,10 @@ class TestFeatureEngineering:
             pass  # Acceptable to raise on empty input
 
     def test_feature_count_matches_config(self, feature_engineer, sample_ohlcv):
-        """The feature list must contain exactly 25 features."""
+        """The feature list must contain exactly 34 features."""
         feature_engineer.calculate_features(sample_ohlcv)
         assert len(feature_engineer.features) == 34, \
-            f"Expected 25 features, got {len(feature_engineer.features)}"
+            f"Expected 34 features, got {len(feature_engineer.features)}"
 
 
 # ---------------------------------------------------------------------------
