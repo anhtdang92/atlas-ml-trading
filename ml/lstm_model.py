@@ -144,10 +144,9 @@ class StockLSTM:
             layers.Dense(1, name='output')
         ], name='StockLSTM')
 
-        # Huber loss: robust to outlier returns (earnings, macro events)
         model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
-            loss=keras.losses.Huber(delta=0.1),
+            optimizer=keras.optimizers.Adam(learning_rate=5e-4, clipnorm=1.0),
+            loss=keras.losses.Huber(delta=0.5),
             metrics=['mae']
         )
 

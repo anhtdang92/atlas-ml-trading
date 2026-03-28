@@ -286,23 +286,25 @@ def show_predictions(_stock_api):
                     # Warning class for low-confidence / mock
                     warn_style = f"border: 1px solid {THEME['accent_danger']}; box-shadow: 0 0 8px rgba(255,0,85,0.2);" if (low_conf or is_mock) else ""
 
-                    # Source badge
+                    # Source badge — honest labeling
                     source = pred.get('prediction_source', 'unknown')
                     if source == 'local_ml':
                         source_badge = f'<span style="color:{THEME["accent_success"]};font-size:0.7rem;">ML Model</span>'
+                    elif source == 'vertex_ai_ml':
+                        source_badge = f'<span style="color:{THEME["accent_success"]};font-size:0.7rem;">Vertex AI</span>'
                     elif source in ('technical_analysis', 'basic_mock', 'enhanced_mock'):
-                        source_badge = f'<span style="color:{THEME["accent_warning"]};font-size:0.7rem;">Technical Analysis</span>'
+                        source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">No Real Model (placeholder)</span>'
                     elif source == 'none':
                         source_badge = f'<span style="color:{THEME["accent_danger"]};font-size:0.7rem;">No Model</span>'
                     else:
                         source_badge = f'<span style="color:{THEME["text_muted"]};font-size:0.7rem;">{source.replace("_"," ").title()}</span>'
 
-                    # Warning banner for mock/no-model
+                    # Warning banner — be explicit about what's real vs fake
                     warning_html = ""
                     if is_mock:
-                        warning_html = f'<div style="background:{THEME["accent_warning"]}15;color:{THEME["accent_warning"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">Technical Analysis — train LSTM for ML predictions</div>'
+                        warning_html = f'<div style="background:{THEME["accent_danger"]}15;color:{THEME["accent_danger"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">PLACEHOLDER — random data, not a real prediction. Train a model first.</div>'
                     elif is_no_model:
-                        warning_html = f'<div style="background:{THEME["accent_warning"]}15;color:{THEME["accent_warning"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">No trained model - train first</div>'
+                        warning_html = f'<div style="background:{THEME["accent_danger"]}15;color:{THEME["accent_danger"]};font-size:0.7rem;padding:4px 8px;border-radius:4px;margin-bottom:8px;text-align:center;">No trained model — run training to get real predictions</div>'
 
                     st.markdown(f"""
                     <div class="glass-card" style="{warn_style}">
@@ -353,13 +355,13 @@ def show_predictions(_stock_api):
     for pred in predictions:
         prediction_source = pred.get('prediction_source', 'unknown')
 
-        # Format prediction source for display
         source_display = {
             'vertex_ai_ml': '🤖 Vertex AI ML',
             'local_ml': '🧠 Local ML',
-            'enhanced_mock': '📊 Technical Analysis',
-            'technical_analysis': '📊 Technical Analysis',
-            'basic_mock': '📊 Technical Analysis'
+            'enhanced_mock': '⚠️ Placeholder (random)',
+            'technical_analysis': '⚠️ Placeholder (random)',
+            'basic_mock': '⚠️ Placeholder (random)',
+            'none': '❌ No Model',
         }.get(prediction_source, '❓ Unknown')
 
         table_data.append({
@@ -436,5 +438,10 @@ def show_predictions(_stock_api):
         - Always conduct independent research before making investment decisions
         """)
 
-    # Status info
-    st.success("◉ **ML Prediction System Active** - Real-time forecasts powered by LSTM neural networks!")
+    # Honest status summary
+    import glob as _glob
+    _real_models = _glob.glob("models/*_model.h5")
+    if _real_models:
+        st.info(f"◉ **{len(_real_models)} trained model(s) found.** Stocks without models show placeholder data — train more models for real predictions.")
+    else:
+        st.warning("⊗ **No trained models found.** All predictions shown are placeholders. Run `python train_gpu.py` or use the Train button above to get real ML predictions.")

@@ -1,5 +1,5 @@
 # Core Dependencies
-yfinance==0.2.46
+yfinance>=1.2.0
 streamlit==1.41.1
 pandas==2.2.3
 numpy==1.26.4

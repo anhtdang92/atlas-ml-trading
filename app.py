@@ -9,6 +9,8 @@ This module serves as the thin router/entry point. Page logic lives in ui/pages/
 
 import streamlit as st
 import time
+import os
+import glob
 from datetime import datetime
 
 # Import UI components
@@ -34,7 +36,7 @@ st.set_page_config(
 load_css()
 
 # Import stock data module
-from data.stock_api import StockAPI
+from data.stock_api import StockAPI, get_all_symbols
 
 # Create a shared StockAPI instance
 _stock_api = StockAPI()
@@ -201,24 +203,29 @@ def main():
     </h3>
     """, unsafe_allow_html=True)
 
-    # Single status card with key indicators - cyberpunk style
+    # Real status indicators derived from actual system state
+    _model_files = glob.glob("models/*_model.h5")
+    _ml_ready = len(_model_files) > 0
+    _ml_color = THEME['accent_success'] if _ml_ready else THEME['accent_danger']
+    _ml_label = f"{len(_model_files)} MODELS" if _ml_ready else "NO MODELS"
+
     st.sidebar.markdown(f"""
     <div class='glass-card' style='text-align: center; padding: 20px; border: 1px solid {THEME['accent_primary']}30;'>
         <div style='display: flex; justify-content: space-around;'>
             <div style='text-align: center;'>
                 <i class='fas fa-check-circle icon-glow' style='color: {THEME['accent_success']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {THEME['accent_success']});'></i>
-                <div style='color: {THEME['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>YFINANCE</div>
-                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>CONNECTED</div>
+                <div style='color: {THEME['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>DATA</div>
+                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>YFINANCE OK</div>
             </div>
             <div style='text-align: center;'>
-                <i class='fas fa-microchip icon-glow' style='color: {THEME['accent_warning']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {THEME['accent_warning']});'></i>
+                <i class='fas fa-microchip icon-glow' style='color: {_ml_color}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {_ml_color});'></i>
                 <div style='color: {THEME['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>ML</div>
-                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>TRAINING</div>
+                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>{_ml_label}</div>
             </div>
             <div style='text-align: center;'>
                 <i class='fas fa-shield-alt icon-glow' style='color: {THEME['accent_primary']}; font-size: 28px; margin-bottom: 8px; filter: drop-shadow(0 0 8px {THEME['accent_primary']});'></i>
-                <div style='color: {THEME['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>PAPER</div>
-                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>SAFE</div>
+                <div style='color: {THEME['text_primary']}; font-size: 11px; font-weight: 700; margin-bottom: 2px; font-family: "Orbitron", sans-serif;'>MODE</div>
+                <div style='color: {THEME['text_muted']}; font-size: 9px; letter-spacing: 0.05em;'>PAPER</div>
             </div>
         </div>
     </div>
@@ -252,20 +259,30 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Progress indicator
+    # Real system status derived from actual state
+    import glob
+    model_files = glob.glob("models/*_model.h5")
+    total_symbols = len(get_all_symbols())
+    trained_count = len(model_files)
+    training_pct = int(100 * trained_count / total_symbols) if total_symbols else 0
+
+    data_ok = _stock_api is not None
+    data_pct = 100 if data_ok else 0
+
+    portfolio_exists = os.path.exists("config/portfolio.json")
+    portfolio_pct = 100 if portfolio_exists else 0
+
     st.sidebar.markdown(f"""
     <h3 style='color: {THEME['text_primary']}; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; display: flex; align-items: center; font-family: "Orbitron", sans-serif;'>
         <i class='fas fa-chart-bar' style='margin-right: 10px; font-size: 18px; color: {THEME['accent_primary']};'></i>
-        PROGRESS
+        SYSTEM STATUS
     </h3>
     """, unsafe_allow_html=True)
 
-    # Mock progress data
     progress_data = {
-        "Data Collection": (95, THEME['accent_success']),
-        "ML Training": (60, THEME['accent_warning']),
-        "Portfolio": (100, THEME['accent_success']),
-        "Rebalancing": (85, THEME['accent_primary'])
+        "Data Feed": (data_pct, THEME['accent_success'] if data_ok else THEME['accent_danger']),
+        f"ML Models ({trained_count}/{total_symbols})": (training_pct, THEME['accent_success'] if training_pct > 80 else THEME['accent_warning'] if training_pct > 0 else THEME['accent_danger']),
+        "Portfolio": (portfolio_pct, THEME['accent_success'] if portfolio_exists else THEME['accent_danger']),
     }
 
     for component, (progress, color) in progress_data.items():

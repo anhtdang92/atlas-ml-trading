@@ -280,16 +280,20 @@ class FeatureEngineer:
         self,
         df: pd.DataFrame,
         lookback: int = 30,
-        prediction_horizon: int = 21
+        prediction_horizon: int = 21,
+        target_returns: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Create sequences for LSTM training.
 
         For position trading: 30-day lookback to predict 21-day (~1 month) returns.
 
         Args:
-            df: DataFrame with features
+            df: DataFrame with features (may be normalized)
             lookback: Number of days to look back (default: 30)
             prediction_horizon: Days ahead to predict (default: 21 trading days)
+            target_returns: Pre-computed target returns from ORIGINAL (un-normalized)
+                close prices. If None, computes from df['close'] — only correct
+                when df contains un-normalized prices.
 
         Returns:
             X: Input sequences (samples, lookback, features)
@@ -299,9 +303,11 @@ class FeatureEngineer:
 
         feature_data = df[self.features].values
 
-        # Calculate future returns (target variable)
         df = df.copy()
-        df['Future_Return'] = df['close'].pct_change(periods=prediction_horizon).shift(-prediction_horizon)
+        if target_returns is not None:
+            df['Future_Return'] = target_returns
+        else:
+            df['Future_Return'] = df['close'].pct_change(periods=prediction_horizon).shift(-prediction_horizon)
         df = df.dropna(subset=['Future_Return'])
 
         X, y = [], []

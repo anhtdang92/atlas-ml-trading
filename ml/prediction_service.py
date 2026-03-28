@@ -331,22 +331,26 @@ class PredictionService:
 
             df_features = self.feature_engineer.calculate_features(df)
 
-            # --- FIX: Split BEFORE normalization to prevent data leakage ---
             split_idx = int(len(df_features) * 0.8)
             df_train = df_features.iloc[:split_idx].copy()
             df_val = df_features.iloc[split_idx:].copy()
 
-            # Fit scaler ONLY on training data
+            # Compute target returns from ORIGINAL close BEFORE normalization
+            train_returns = df_train['close'].pct_change(periods=21).shift(-21)
+            val_returns = df_val['close'].pct_change(periods=21).shift(-21)
+
+            # Normalize features (scaler fit only on training data)
             df_train_norm = self.feature_engineer.normalize_features(df_train, fit=True)
-            # Apply training scaler to validation data (may exceed [0,1], clipped)
             df_val_norm = self.feature_engineer.normalize_features(df_val, fit=False)
 
-            # Create sequences from normalized data
+            # Create sequences with pre-computed targets from original prices
             X_train, y_train = self.feature_engineer.create_sequences(
-                df_train_norm, lookback=30, prediction_horizon=21
+                df_train_norm, lookback=30, prediction_horizon=21,
+                target_returns=train_returns.values,
             )
             X_val, y_val = self.feature_engineer.create_sequences(
-                df_val_norm, lookback=30, prediction_horizon=21
+                df_val_norm, lookback=30, prediction_horizon=21,
+                target_returns=val_returns.values,
             )
 
             if len(X_train) < 50 or len(X_val) < 10:
@@ -432,29 +436,38 @@ class PredictionService:
                 return {'status': 'error', 'message': 'Insufficient data'}
 
             df_features = self.feature_engineer.calculate_features(df)
+
+            # Compute target returns on the FULL dataset before splitting.
+            # This prevents losing 21 rows at the boundary of each fold.
+            all_returns = df_features['close'].pct_change(periods=21).shift(-21).values
+
             total_len = len(df_features)
-            min_train = int(total_len * 0.4)
-            step_size = (total_len - min_train) // n_splits
+            min_train = int(total_len * 0.5)
+            step_size = max((total_len - min_train) // n_splits, 60)
 
             fold_metrics = []
             baseline_metrics = []
 
             for fold in range(n_splits):
                 train_end = min_train + fold * step_size
-                val_end = min(train_end + step_size, total_len)
+                val_end = min(train_end + step_size, total_len - 21)
 
-                if val_end - train_end < 30:
+                if val_end <= train_end or val_end - train_end < 30:
                     continue
 
                 df_train = df_features.iloc[:train_end].copy()
                 df_val = df_features.iloc[train_end:val_end].copy()
 
-                # Fit scaler on this fold's training data only
+                train_ret = all_returns[:train_end]
+                val_ret = all_returns[train_end:val_end]
+
                 df_train_norm = self.feature_engineer.normalize_features(df_train, fit=True)
                 df_val_norm = self.feature_engineer.normalize_features(df_val, fit=False)
 
-                X_train, y_train = self.feature_engineer.create_sequences(df_train_norm, 30, 21)
-                X_val, y_val = self.feature_engineer.create_sequences(df_val_norm, 30, 21)
+                X_train, y_train = self.feature_engineer.create_sequences(
+                    df_train_norm, 30, 21, target_returns=train_ret)
+                X_val, y_val = self.feature_engineer.create_sequences(
+                    df_val_norm, 30, 21, target_returns=val_ret)
 
                 if len(X_train) < 30 or len(X_val) < 5:
                     continue
@@ -562,15 +575,17 @@ class PredictionService:
 
             df_features = self.feature_engineer.calculate_features(df)
 
-            # Split before normalization
             split_idx = int(len(df_features) * 0.8)
             df_train = df_features.iloc[:split_idx].copy()
             df_val = df_features.iloc[split_idx:].copy()
 
+            # Compute target returns from ORIGINAL close BEFORE normalization
+            train_returns = df_train['close'].pct_change(periods=21).shift(-21)
+            val_returns = df_val['close'].pct_change(periods=21).shift(-21)
+
             df_train_norm = self.feature_engineer.normalize_features(df_train, fit=True)
             df_val_norm = self.feature_engineer.normalize_features(df_val, fit=False)
 
-            # Check if preset supports multi-horizon
             preset_config = StockLSTMGPU.PRESETS.get(preset, {})
             use_multi_horizon = preset_config.get('multi_horizon', False)
 
@@ -583,10 +598,12 @@ class PredictionService:
                 )
             else:
                 X_train, y_train = self.feature_engineer.create_sequences(
-                    df_train_norm, lookback=lookback, prediction_horizon=21
+                    df_train_norm, lookback=lookback, prediction_horizon=21,
+                    target_returns=train_returns.values,
                 )
                 X_val, y_val = self.feature_engineer.create_sequences(
-                    df_val_norm, lookback=lookback, prediction_horizon=21
+                    df_val_norm, lookback=lookback, prediction_horizon=21,
+                    target_returns=val_returns.values,
                 )
 
             min_train = 50 if not use_multi_horizon else 30

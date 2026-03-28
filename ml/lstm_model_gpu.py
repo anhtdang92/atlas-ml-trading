@@ -99,37 +99,38 @@ def configure_gpu(memory_growth: bool = True, mixed_precision: bool = True) -> D
 # ---------------------------------------------------------------------------
 
 def directional_loss(y_true, y_pred):
-    """Loss that directly penalizes wrong direction predictions.
+    """Loss that penalizes wrong direction predictions more heavily.
 
-    Wrong direction costs 5x more than right direction with wrong magnitude.
-    This is what actually matters for trading: getting the sign right.
+    Wrong direction costs 3x more than right direction with wrong magnitude.
+    Predictions are clipped to prevent inf/NaN from extreme values.
     """
     y_true = tf.cast(y_true, tf.float32)
     y_pred = tf.cast(y_pred, tf.float32)
+    y_pred = tf.clip_by_value(y_pred, -1.0, 1.0)
 
     magnitude_loss = tf.abs(y_true - y_pred)
-    direction_match = tf.sign(y_true) * tf.sign(y_pred)  # +1 if same sign, -1 if opposite
-    # Wrong direction: multiply loss by 5
-    weight = tf.where(direction_match >= 0, 1.0, 5.0)
+    direction_match = tf.sign(y_true) * tf.sign(y_pred)
+    weight = tf.where(direction_match >= 0, 1.0, 3.0)
     return tf.reduce_mean(weight * magnitude_loss)
 
 
 def financial_loss(y_true, y_pred):
-    """Hybrid loss: directional accuracy (70%) + magnitude (30%).
+    """Hybrid loss: directional accuracy (50%) + magnitude (50%).
 
-    Combines soft directional classification with regression.
+    Combines soft directional classification with Huber regression.
+    Uses safe clipping to prevent inf/NaN from overflow.
     """
     y_true = tf.cast(y_true, tf.float32)
     y_pred = tf.cast(y_pred, tf.float32)
+    y_pred = tf.clip_by_value(y_pred, -1.0, 1.0)
 
-    # Directional: sigmoid cross-entropy on sign
     true_up = tf.cast(y_true > 0, tf.float32)
+    logits = tf.clip_by_value(y_pred * 5.0, -10.0, 10.0)
     direction_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels=true_up, logits=y_pred * 10.0
+        labels=true_up, logits=logits
     )
-    # Magnitude: Huber
-    magnitude_loss = tf.keras.losses.huber(y_true, y_pred, delta=0.1)
-    return 0.7 * tf.reduce_mean(direction_loss) + 0.3 * tf.reduce_mean(magnitude_loss)
+    magnitude_loss = tf.keras.losses.huber(y_true, y_pred, delta=0.5)
+    return 0.5 * tf.reduce_mean(direction_loss) + 0.5 * tf.reduce_mean(magnitude_loss)
 
 
 # ---------------------------------------------------------------------------
@@ -505,7 +506,7 @@ class StockLSTMGPU:
 
             loss_fn = self._get_loss()
             model.compile(
-                optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+                optimizer=keras.optimizers.Adam(learning_rate=5e-4, clipnorm=1.0),
                 loss={'pred_5d': loss_fn, 'pred_10d': loss_fn, 'pred_21d': loss_fn},
                 loss_weights={'pred_5d': 0.2, 'pred_10d': 0.3, 'pred_21d': 0.5},
                 metrics={'pred_21d': ['mae']},
@@ -516,7 +517,7 @@ class StockLSTMGPU:
             model = keras.Model(inputs=inputs, outputs=output,
                                 name=f'StockModel_{self.preset_name}')
             model.compile(
-                optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+                optimizer=keras.optimizers.Adam(learning_rate=5e-4, clipnorm=1.0),
                 loss=self._get_loss(),
                 metrics=['mae'],
                 jit_compile=True,
